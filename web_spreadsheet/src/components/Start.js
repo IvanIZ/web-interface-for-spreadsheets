@@ -29,11 +29,11 @@ const BPlusTree = require('bplustree');
 let tree = new BPlusTree()
 
 let outputTable, searchResultTable, range_search_upper_index, range_search_lower_index, single_search_button, range_search_button;
-let single_search_returned_key 
+let single_search_returned_key = []
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
 let attri_cell_arr 
 
-let data
+let data = []
 
 const columnLabels = ["Name", "Age"];
 
@@ -130,8 +130,12 @@ class Start extends Component {
   }
 
   getFinalSingleSearchResult = () => {
-    let resultMatrix = [arri_array]
-    resultMatrix[1] = data[Number(single_search_returned_key) + 1]
+    let resultMatrix = [data[0]]
+    // resultMatrix[1] = data[Number(single_search_returned_key)]
+    for (var i = 0; i < single_search_returned_key.length; i++) {
+      resultMatrix[i + 1] = data[single_search_returned_key[i]]
+    }
+    
     console.log("final single search result is ", resultMatrix)
     searchResultTable = <Jumbotron>
                              Below Is The Retrieved Data
@@ -141,9 +145,9 @@ class Start extends Component {
   }
 
   getFinalRangeSearchResult = () => {
-    let resultMatrix = [arri_array]
+    let resultMatrix = [data[0]]
     for (var i = 0; i < range_search_returned_key.length; i++) {
-      resultMatrix[i + 1] = data[range_search_returned_key[i] + 1]
+      resultMatrix[i + 1] = data[range_search_returned_key[i]]
     }
     console.log("final range search result ", resultMatrix)
     searchResultTable = <Jumbotron>
@@ -170,7 +174,7 @@ class Start extends Component {
   onSingleSearchKeySubmit = (e) => {
     e.preventDefault();
     single_search_returned_key = tree.fetch(this.state.single_search_index)
-    console.log("user entered single search result key is: " + single_search_returned_key)
+    console.log("user entered single search result key is: " , single_search_returned_key)
     this.toggleSingleSearchModal()
     this.getFinalSingleSearchResult()
   }
@@ -187,6 +191,7 @@ class Start extends Component {
 
   fileHandler = (event) => {
     let fileObj = event.target.files[0];
+    console.log("file change!")
     tree = new BPlusTree()
   
     //just pass the fileObj as parameter
@@ -205,13 +210,14 @@ class Start extends Component {
   }
 
   fillOutputTable = () => {
+    // searchResultTable = ''
     let row_copy = this.state.rows
     let col_copy = this.state.cols
     attri_cell_arr = [{name: "#", key: 0}]
     if (row_copy.length != 0 || col_copy.length != 0) {
       console.log("not null")
-      console.log(row_copy)
-      console.log(col_copy)
+      console.log("row is: ", row_copy)
+      console.log("col is", col_copy)
 
       //fill in attribute cell array
       for (var i = 0; i < col_copy.length; i++) {
@@ -227,13 +233,15 @@ class Start extends Component {
       console.log(arri_array)
 
       //fill in entire matrix
-      data = [arri_array]
+      //data = [arri_array]
+      data = []
+      searchResultTable = ''
       for (var i = 0; i < row_copy.length; i++) {
         let temp = []
         for (var j = 0; j < col_copy.length; j++) {
           temp[j] = { value: row_copy[i][j]}
         }
-        data[i+1] = temp
+        data[i] = temp
       }
       console.log("the value of whole data is: ", data)
 
@@ -248,7 +256,7 @@ class Start extends Component {
         single_search_button = <Button color="primary" onClick={this.toggleRangeSearchModal} >Range Retrieval</Button> 
         range_search_button = <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Row Retrieval</Button> 
         console.log("create TREE")
-        for (var i = 0; i < row_copy.length; i++) {
+        for (var i = 1; i < row_copy.length; i++) {
           tree.store(row_copy[i][0], i)
         }
       }
