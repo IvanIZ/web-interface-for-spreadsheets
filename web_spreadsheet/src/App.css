@@ -24,6 +24,17 @@
   color: white;
 }
 
+.logo-jumbo {
+  background-color: #f8a68d !important;
+  height: 120px !important;
+  padding-top:0px !important;
+  padding-left:0px !important;
+}
+
+.App-title {
+  font-size: large;
+}
+
 .App-link {
   color: #61dafb;
 }

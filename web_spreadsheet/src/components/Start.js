@@ -16,13 +16,18 @@ import {
   Col,
   Jumbotron,
   Button,
-  Table, Modal, ModalHeader, ModalFooter, ModalBody
+  Table, Modal, ModalHeader, ModalFooter, ModalBody, Form, FormGroup, Label, Input
 } from 'reactstrap';
 // import {Modal, Button, Row, Col, Form} from 'react-bootstrap';
 const BPlusTree = require('bplustree');
 
 //default order: 6
-const tree = new BPlusTree()
+let tree = new BPlusTree()
+
+let outputTable, searchResultTable;
+let single_search_returned_key 
+let singleSearchResult = []
+let attri_cell_arr 
 
 class Start extends Component {
 
@@ -34,12 +39,30 @@ class Start extends Component {
       attri: [],
       isSearchSelectionModalOpen: false, 
       isRangeSearchModalOpen: false, 
-      isSingelSearchModalOpen: false
+      isSingelSearchModalOpen: false,
+
+      isUploadAckModalOpen: false,
+
+      single_search_index: 0, 
+      // single_search_returned_key: 0, 
+
+      isSingleSearch: false,
+
+      isResultPanelModalOpen: false, 
+      searchResult: []
     }
 
     this.toggleSearchSelectionModal = this.toggleSearchSelectionModal.bind()
     this.toggleRangeSearchModal = this.toggleRangeSearchModal.bind()
-    this.toggleSingleSearchModal = this.toggleSearchSelectionModal.bind()
+    this.toggleSingleSearchModal = this.toggleSingleSearchModal.bind()
+    this.toggleUploadAckModal = this.toggleUploadAckModal.bind()
+    this.toggleResultPanelModal = this.toggleResultPanelModal.bind()
+  }
+
+  toggleUploadAckModal = () => {
+    this.setState({
+      isUploadAckModalOpen: !this.state.isUploadAckModalOpen
+    })
   }
 
   toggleSearchSelectionModal = () => {
@@ -57,17 +80,83 @@ class Start extends Component {
 
   toggleSingleSearchModal = () => {
     this.setState({
-      isSingelSearchModalOpen: !this.state.isSingelSearchModalOpen,
-      isSearchSelectionModalOpen: !this.state.isSearchSelectionModalOpen
+      isSingelSearchModalOpen: !this.state.isSingelSearchModalOpen
     })
   }
 
+  // close acknowledge modal, open selection and display penel, and fill out content
   onRetrieveSelectionClick = () => {
-    this.toggleSearchSelectionModal();
+    this.fillOutputTable()
+
+    //open seach selection panel, if it's closed
+    if (this.state.isSearchSelectionModalOpen == false) {
+      this.toggleSearchSelectionModal();
+    }
+    
+    if (this.state.isUploadAckModalOpen == true) {
+      this.toggleUploadAckModal()
+    }
+
+    //close current result panel, if it's openned
+    if (this.state.isResultPanelModalOpen == true) {
+      this.toggleResultPanelModal()
+    }
+
+    //close single search modal, if it's openned
+    if (this.state.isSingelSearchModalOpen == true) {
+      this.toggleSingleSearchModal()
+    }
+
+    //close range search modal, if it's openned
+    if (this.state.isRangeSearchModalOpen == true) {
+      this.toggleRangeSearchModal()
+    }
+  }
+
+  toFrontPage = () => {
+    this.setState({
+      isResultPanelModalOpen: false, 
+      isRangeSearchModalOpen: false, 
+      isSingelSearchModalOpen: false, 
+      isSearchSelectionModalOpen: false, 
+      isUploadAckModalOpen: false
+    })
+  }
+
+  getFinalSingleSearchResult = () => {
+   
+    singleSearchResult = [this.state.rows[single_search_returned_key]]
+    console.log("final result is")
+    console.log(singleSearchResult)
+    searchResultTable = <OutTable data={singleSearchResult} columns={attri_cell_arr} tableClassName="ExcelTable2007" tableHeaderRowClass="heading" />
+    this.toggleResultPanelModal()
+  }
+
+  toggleResultPanelModal = () => {
+    this.setState({
+      isResultPanelModalOpen: !this.state.isResultPanelModalOpen
+    })
+  }
+
+  handleSearchIndexChange = (e) => {
+    this.setState({
+        [e.target.name]: e.target.value
+    })
+  }
+
+  onSingleSearchKeySubmit = (e) => {
+    e.preventDefault();
+    single_search_returned_key = tree.fetch(this.state.single_search_index)
+    this.setState({
+      isSingleSearch: true
+    })
+    console.log("user entered single search result key is: " + single_search_returned_key)
+    this.getFinalSingleSearchResult()
   }
 
   fileHandler = (event) => {
     let fileObj = event.target.files[0];
+    tree = new BPlusTree()
   
     //just pass the fileObj as parameter
     ExcelRenderer(fileObj, (err, resp) => {
@@ -80,29 +169,19 @@ class Start extends Component {
           rows: resp.rows
         });
       }
-    });               
-  
+    });   
+    this.toggleUploadAckModal() 
   }
-    
 
-  render() {
-    let outputTable;
-    let output;
+  fillOutputTable = () => {
     let row_copy = this.state.rows
     let col_copy = this.state.cols
-    let attri_cell_arr = [{name: "#", key: 0}]
+    attri_cell_arr = [{name: "#", key: 0}]
     if (row_copy.length != 0 || col_copy.length != 0) {
       console.log("not null")
       console.log(row_copy)
       console.log(col_copy)
       
-      // // fill in attribute array
-      // let atti_array = [","]
-      // for (var i = 0; i < col_copy.length; i++) {
-      //   atti_array[i + 1] = col_copy[i].name
-      // }
-      // console.log(atti_array)
-
       // //fill in entire data
       // let whole_data = [atti_array]
       // for (var i = 0; i < row_copy.length; i++) {
@@ -118,6 +197,8 @@ class Start extends Component {
       console.log(attri_cell_arr)
 
       if (tree.depth(true) == 0) {
+        outputTable = <OutTable data={row_copy} columns={attri_cell_arr} tableClassName="ExcelTable2007" tableHeaderRowClass="heading" />
+        console.log("create TREE")
         for (var i = 0; i < row_copy.length; i++) {
           tree.store(row_copy[i][0], i)
         }
@@ -131,62 +212,94 @@ class Start extends Component {
       let example_range_fetch = tree.fetchRange(40, 67)
       console.log("The range-fetched value is:  ", example_range_fetch)
 
-      outputTable = <OutTable data={this.state.rows} columns={attri_cell_arr} tableClassName="ExcelTable2007" tableHeaderRowClass="heading" />
+      this.setState({
+        isSearchSelectionModalOpen:true
+      })
 
     } else {
       console.log("null")
       outputTable = "Not uploaded yet"
     }
+  }
+
+
+  render() {
 
     return (
+
       <div className="App">
-        <Jumbotron >
-            <Container>
-                <header className="App-header">
-                  <img src={logo} className="App-logo" alt="logo" />
-                  <p>
-                    Welcome to spreadsheet web. Upload file below
+         <Jumbotron className='logo-jumbo'>
+          
+          </Jumbotron >
+          <Jumbotron fluid>
+            <Container fluid>
+                  <h1 className="display-3"> Welcome to spreadsheet web!</h1>
+                  <p className="lead">This is a simple web interface that allows you to upload spreadsheets, and retreive or removal data.</p>
+                  <hr className="my-2" />
+                  <p>Please upload your file below</p>
+                  <p className="lead">
+                    <input type="file" onChange={this.fileHandler.bind(this)} style={{"padding":"10px"}} />
                   </p>
-                  <input type="file" onChange={this.fileHandler.bind(this)} style={{"padding":"10px"}} />
-                  <p >
-                    <Button size="lg" style={{fontSize: 36, fontWeight: 'bold'}} onClick={this.onRetrieveSelectionClick} block>Retrieve Data</Button>
-                  </p>
+
                   <Modal isOpen={this.state.isSearchSelectionModalOpen} toggle={this.toggleSearchSelectionModal} >
-                    <ModalHeader toggle={this.toggleSearchSelectionModal}>Select Data Retrieval Option</ModalHeader>
+                    <ModalHeader toggle={this.toggleSearchSelectionModal}>
+                          <Row>
+                            &nbsp;&nbsp;Select Data Retrieval Option 
+                          </Row>
+                          &nbsp;
+                          <Row>
+                            &nbsp;&nbsp;
+                            <Button color="primary" onClick={this.toggleRangeSearchModal} >Range Retrieval</Button> {' '}
+                            &nbsp;&nbsp;&nbsp;
+                            <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Row Retrieval</Button> 
+                          </Row>
+                    </ModalHeader>
                     <ModalBody>
-                        <Button color="primary" onClick={this.toggleRangeSearchModal} type="submit">Range Retrieval</Button> {' '}
-                        <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Row Retrieval</Button> {' '}
+                        {outputTable}
                     </ModalBody>
                   </Modal>
-                </header>  
-                
-                {outputTable}
+
+                  <Modal isOpen={this.state.isUploadAckModalOpen} toggle={this.toggleUploadAckModal} >
+                    <ModalHeader toggle={this.toggleUploadAckModal}>Upload Seccessful! </ModalHeader>
+                    <ModalBody>
+                      <Button color="primary" onClick={this.onRetrieveSelectionClick} type="submit">View and Select Data Retrieval Option</Button> {'   '}
+                      <Button color="primary" onClick={this.toggleUploadAckModal} type="submit">Cancel/Re-upload</Button> 
+                    </ModalBody>
+                  </Modal>
+
+                  <Modal isOpen={this.state.isSingelSearchModalOpen} toggle={this.toggleSingleSearchModal} >
+                    <ModalHeader toggle={this.toggleSingleSearchModal}>Please enter your search index. (First Attribute Value) </ModalHeader>
+                    <ModalBody>
+                      <Form onSubmit={this.onSingleSearchKeySubmit}>
+                        <FormGroup>
+                          <Label for="single_search_index">Single Search Index</Label>
+                          <Input type="text" name="single_search_index" id="single_search_index" onChange={e => this.handleSearchIndexChange(e)} />
+                        </FormGroup>
+                        <Button color="primary" className='single_search_submit' type="submit">Search</Button> {' '}
+                      </Form>
+                    </ModalBody>
+                  </Modal>
+
+                  <Modal isOpen={this.state.isResultPanelModalOpen} toggle={this.toggleResultPanelModal} >
+                    <ModalHeader toggle={this.toggleResultPanelModal}>
+                      <Row>
+                        &nbsp;&nbsp;This Is Your Retreived Data 
+                      </Row>
+                      &nbsp;
+                      <Row>
+                        &nbsp;&nbsp;
+                        <Button color="primary" onClick={this.onRetrieveSelectionClick} type="submit">Retrieve data again</Button> {'   '}
+                        &nbsp;&nbsp;&nbsp;
+                        <Button color="primary" onClick={this.toFrontPage} type="submit">Exit</Button> 
+                      </Row>
+                    </ModalHeader>
+                    <ModalBody>
+                          {searchResultTable}
+                    </ModalBody>
+                  </Modal>
             </Container>
         </Jumbotron>
       </div>
-      //   <Modal
-      //   {...props}
-      //   size="lg"
-      //   aria-labelledby="contained-modal-title-vcenter"
-      //   centered
-      // >
-      //   <Modal.Header closeButton>
-      //     <Modal.Title id="contained-modal-title-vcenter">
-      //       Modal heading
-      //     </Modal.Title>
-      //   </Modal.Header>
-      //   <Modal.Body>
-      //     <h4>Centered Modal</h4>
-      //     <p>
-      //       Cras mattis consectetur purus sit amet fermentum. Cras justo odio,
-      //       dapibus ac facilisis in, egestas eget quam. Morbi leo risus, porta ac
-      //       consectetur ac, vestibulum at eros.
-      //     </p>
-      //   </Modal.Body>
-      //   <Modal.Footer>
-      //     <Button variant="danger" onClick={props.onHide}>Close</Button>
-      //   </Modal.Footer>
-      // </Modal>
     );
   }
 }
