@@ -21,8 +21,6 @@ import {
 import Spreadsheet from "react-spreadsheet";
 
 import { ReactCanvasGrid } from 'react-canvas-grid';
-// import { FixedSizeHolder } from '../components/FixedSizeHolder';
-// import { createFakeDataAndColumns } from '../data/dataAndColumns';
 const BPlusTree = require('bplustree');
 
 //default order: 6
@@ -50,8 +48,9 @@ class Start extends Component {
       isSingelSearchModalOpen: false,
 
       isUploadAckModalOpen: false,
+      isErrorModalOpen: false,
 
-      single_search_index: 0, 
+      single_search_index: '', 
 
       isSingleSearch: false,
 
@@ -59,7 +58,11 @@ class Start extends Component {
       searchResult: [], 
 
       range_search_lower_index: '', 
-      range_search_upper_index: ''
+      range_search_upper_index: '', 
+
+      single_remove_index: '', 
+      range_remove_lower_index: '', 
+      range_remove_upper_index:''
     }
 
     this.toggleSearchSelectionModal = this.toggleSearchSelectionModal.bind()
@@ -67,6 +70,13 @@ class Start extends Component {
     this.toggleSingleSearchModal = this.toggleSingleSearchModal.bind()
     this.toggleUploadAckModal = this.toggleUploadAckModal.bind()
     this.toggleResultPanelModal = this.toggleResultPanelModal.bind()
+    this.toggleErrorModal = this.toggleErrorModal.bind()
+  }
+
+  toggleErrorModal = () => {
+    this.setState({
+      isErrorModalOpen: !this.state.isErrorModalOpen
+    })
   }
 
 
@@ -177,37 +187,43 @@ class Start extends Component {
 
   onSingleSearchKeySubmit = (e) => {
     e.preventDefault();
-    single_search_returned_key = tree.fetch(this.state.single_search_index)
-    console.log("user entered single search result key is: " , single_search_returned_key)
-    this.toggleSingleSearchModal()
-    this.getFinalSingleSearchResult()
+    if (this.state.single_search_index == '') {
+      this.toggleErrorModal()
+    } else {
+      single_search_returned_key = tree.fetch(Number(this.state.single_search_index))
+      console.log("user entered single search result key is: " , single_search_returned_key)
+      this.toggleSingleSearchModal()
+      this.getFinalSingleSearchResult()
+    }
   }
 
   onRangeSearchIndexSubmit = (e) => {
     e.preventDefault();
-
-    let lowerBound, upperBound
-
-    //Restore default min/max bound if null entered
-    if (this.state.range_search_lower_index == '') {
-      lowerBound = Number.MIN_VALUE
+    if (this.state.range_search_lower_index == '' && this.state.range_search_upper_index == '') {
+      this.toggleErrorModal()
     } else {
-      lowerBound = Number(this.state.range_search_lower_index)
-    }
+      let lowerBound, upperBound
+      //Restore default min/max bound if null entered
+      if (this.state.range_search_lower_index == '') {
+        lowerBound = Number.MIN_VALUE
+      } else {
+        lowerBound = Number(this.state.range_search_lower_index)
+      }
 
-    if (this.state.range_search_upper_index == '') {
-      console.log("Invalid upper")
-      upperBound = Number.MAX_VALUE
-    } else {
-      upperBound = Number(this.state.range_search_upper_index)
-    }
+      if (this.state.range_search_upper_index == '') {
+        console.log("Invalid upper")
+        upperBound = Number.MAX_VALUE
+      } else {
+        upperBound = Number(this.state.range_search_upper_index)
+      }
 
-    range_search_returned_key = tree.fetchRange(lowerBound, upperBound, false)
-    console.log("user entered lower index is: " + lowerBound)
-    console.log("user entered upper index is: " + upperBound)
-    console.log("user entered range search result keys are: ", range_search_returned_key)
-    this.toggleRangeSearchModal()
-    this.getFinalRangeSearchResult()
+      range_search_returned_key = tree.fetchRange(lowerBound, upperBound, false)
+      console.log("user entered lower index is: " + lowerBound)
+      console.log("user entered upper index is: " + upperBound)
+      console.log("user entered range search result keys are: ", range_search_returned_key)
+      this.toggleRangeSearchModal()
+      this.getFinalRangeSearchResult()
+    }
   }
 
   fileHandler = (event) => {
@@ -231,7 +247,6 @@ class Start extends Component {
   }
 
   fillOutputTable = () => {
-    // searchResultTable = ''
     let row_copy = this.state.rows
     let col_copy = this.state.cols
     attri_cell_arr = [{name: "#", key: 0}]
@@ -318,7 +333,7 @@ class Start extends Component {
                       <Form onSubmit={this.onSingleSearchKeySubmit}>
                         <FormGroup>
                           <Label for="single_search_index">Single Search Index</Label>
-                          <Input type="number" name="single_search_index" id="single_search_index" onChange={e => this.handleSearchIndexChange(e)} />
+                          <Input type="text" pattern="[0-9]*" name="single_search_index" id="single_search_index" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
                         <Button color="primary" className='single_search_submit' type="submit">Search</Button> {' '}
                       </Form>
@@ -354,6 +369,16 @@ class Start extends Component {
                         <Button color="primary" onClick={this.toFrontPage} type="submit">View</Button> 
                     </ModalBody>
                   </Modal>
+
+                  <Modal isOpen={this.state.isErrorModalOpen} toggle={this.toggleErrorModal} >
+                    <ModalHeader toggle={this.toggleErrorModal}>
+                      There is somgthing wrong with your input. Please try again
+                    </ModalHeader>
+                    <ModalBody>
+                        <Button color="primary" onClick={this.toggleErrorModal} type="submit">Try Again</Button> 
+                    </ModalBody>
+                  </Modal>
+
             </Container>
         </Jumbotron>
         {searchResultTable}
