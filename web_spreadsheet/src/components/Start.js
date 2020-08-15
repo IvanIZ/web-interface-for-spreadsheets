@@ -28,7 +28,7 @@ const BPlusTree = require('bplustree');
 //default order: 6
 let tree = new BPlusTree()
 
-let outputTable, searchResultTable, range_search_upper_index, range_search_lower_index, single_search_button, range_search_button;
+let outputTable, searchResultTable, single_search_button, range_search_button;
 let single_search_returned_key = []
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
 let attri_cell_arr 
@@ -58,8 +58,8 @@ class Start extends Component {
       isResultPanelModalOpen: false, 
       searchResult: [], 
 
-      range_search_lower_index: 0, 
-      range_search_upper_index: 0
+      range_search_lower_index: '', 
+      range_search_upper_index: ''
     }
 
     this.toggleSearchSelectionModal = this.toggleSearchSelectionModal.bind()
@@ -130,10 +130,9 @@ class Start extends Component {
   }
 
   getFinalSingleSearchResult = () => {
-    let resultMatrix = [data[0]]
-    // resultMatrix[1] = data[Number(single_search_returned_key)]
+    let resultMatrix = []
     for (var i = 0; i < single_search_returned_key.length; i++) {
-      resultMatrix[i + 1] = data[single_search_returned_key[i]]
+      resultMatrix[i] = data[single_search_returned_key[i]]
     }
     
     console.log("final single search result is ", resultMatrix)
@@ -145,9 +144,9 @@ class Start extends Component {
   }
 
   getFinalRangeSearchResult = () => {
-    let resultMatrix = [data[0]]
+    let resultMatrix = []
     for (var i = 0; i < range_search_returned_key.length; i++) {
-      resultMatrix[i + 1] = data[range_search_returned_key[i]]
+      resultMatrix[i] = data[range_search_returned_key[i]]
     }
     console.log("final range search result ", resultMatrix)
     searchResultTable = <Jumbotron>
@@ -156,6 +155,11 @@ class Start extends Component {
                             </Row>
                             <Spreadsheet data={resultMatrix} />
                         </Jumbotron>
+    //clear current index values
+    this.setState({
+      range_search_lower_index: '',
+      range_search_upper_index: ''
+    })
     this.toggleResultPanelModal()
   }
 
@@ -181,9 +185,26 @@ class Start extends Component {
 
   onRangeSearchIndexSubmit = (e) => {
     e.preventDefault();
-    range_search_returned_key = tree.fetchRange(Number(this.state.range_search_lower_index), Number(this.state.range_search_upper_index), false)
-    console.log("user entered lower index is: " + this.state.range_search_lower_index)
-    console.log("user entered upper index is: " + this.state.range_search_upper_index)
+
+    let lowerBound, upperBound
+
+    //Restore default min/max bound if null entered
+    if (this.state.range_search_lower_index == '') {
+      lowerBound = Number.MIN_VALUE
+    } else {
+      lowerBound = Number(this.state.range_search_lower_index)
+    }
+
+    if (this.state.range_search_upper_index == '') {
+      console.log("Invalid upper")
+      upperBound = Number.MAX_VALUE
+    } else {
+      upperBound = Number(this.state.range_search_upper_index)
+    }
+
+    range_search_returned_key = tree.fetchRange(lowerBound, upperBound, false)
+    console.log("user entered lower index is: " + lowerBound)
+    console.log("user entered upper index is: " + upperBound)
     console.log("user entered range search result keys are: ", range_search_returned_key)
     this.toggleRangeSearchModal()
     this.getFinalRangeSearchResult()
@@ -215,16 +236,8 @@ class Start extends Component {
     let col_copy = this.state.cols
     attri_cell_arr = [{name: "#", key: 0}]
     if (row_copy.length != 0 || col_copy.length != 0) {
-      console.log("not null")
       console.log("row is: ", row_copy)
       console.log("col is", col_copy)
-
-      //fill in attribute cell array
-      for (var i = 0; i < col_copy.length; i++) {
-        col_copy[i] = {name: col_copy[i].name, key: col_copy[i].key + 1 }
-        attri_cell_arr[i + 1] = col_copy[i]
-      }
-      console.log(attri_cell_arr)
 
       //fill in attribute row
       for (var i = 0; i < col_copy.length; i++) {
@@ -232,8 +245,7 @@ class Start extends Component {
       }
       console.log(arri_array)
 
-      //fill in entire matrix
-      //data = [arri_array]
+      //fill in entire data matrix
       data = []
       searchResultTable = ''
       for (var i = 0; i < row_copy.length; i++) {
@@ -243,7 +255,7 @@ class Start extends Component {
         }
         data[i] = temp
       }
-      console.log("the value of whole data is: ", data)
+      console.log("the value of entire data matrix is: ", data)
 
 
       if (tree.depth(true) == 0) {
@@ -253,22 +265,14 @@ class Start extends Component {
                           </Row>
                           <Spreadsheet data={data} />
                       </Jumbotron>
-        single_search_button = <Button color="primary" onClick={this.toggleRangeSearchModal} >Range Retrieval</Button> 
-        range_search_button = <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Row Retrieval</Button> 
+        single_search_button = <Button color="primary" onClick={this.toggleRangeSearchModal} >Range Index Retrieval</Button> 
+        range_search_button = <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Index Retrieval</Button> 
         console.log("create TREE")
-        for (var i = 1; i < row_copy.length; i++) {
+        for (var i = 0; i < row_copy.length; i++) {
           tree.store(row_copy[i][0], i)
         }
       }
       
-      //single fetch example
-      let example_fetch = tree.fetch(34)
-      console.log("The fetched value should be 11. Actual value is: " + example_fetch)
-
-      //range fetch example
-      let example_range_fetch = tree.fetchRange(40, 67)
-      console.log("The range-fetched value is:  ", example_range_fetch)
-
       this.setState({
         isSearchSelectionModalOpen:true
       })
@@ -291,7 +295,7 @@ class Start extends Component {
           <Jumbotron fluid>
             <Container fluid>
                   <h1 className="display-3"> Welcome to spreadsheet web!</h1>
-                  <p className="lead">This is a simple web interface that allows you to upload spreadsheets, and retreive or removal data.</p>
+                  <p className="lead">This is a simple web interface that allows you to upload spreadsheets, and retrieve and removal data.</p>
                   <hr className="my-2" />
                   <p>Please upload your file below</p>
                   <p className="lead">
@@ -326,16 +330,20 @@ class Start extends Component {
                     <ModalBody>
                       <Form onSubmit={this.onRangeSearchIndexSubmit}>
                         <FormGroup>
-                          <Label for="range_search_lower_index">Lower Index</Label>
-                          <Input type="number" name="range_search_lower_index" id="range_search_lower_index" onChange={e => this.handleSearchIndexChange(e)} />
+                          <Label for="range_search_lower_index">Lower Bound</Label>
+                          <Input type="text" pattern="[0-9]*" name="range_search_lower_index" id="range_search_lower_index" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
                         <FormGroup>
-                          <Label for="range_search_upper_index">Upper Index</Label>
-                          <Input type="number" name="range_search_upper_index" id="range_search_upper_index" onChange={e => this.handleSearchIndexChange(e)} />
+                          <Label for="range_search_upper_index">Upper Bound</Label>
+                          <Input type="text" pattern="[0-9]*" name="range_search_upper_index" id="range_search_upper_index" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
                         <Button color="primary" className='range_search_submit' type="submit">Search</Button> {' '}
                       </Form>
                     </ModalBody>
+                    <ModalFooter>
+                      Hint: to find entries with indices greater/smaller than a value, only enter the lower bound/upper bound (e.g., Find 
+                      entries with indices {'>'} 5, enter 5 in lower bound and leave upper bound blank).
+                    </ModalFooter>
                   </Modal>
 
                   <Modal isOpen={this.state.isResultPanelModalOpen} toggle={this.toggleResultPanelModal} >
