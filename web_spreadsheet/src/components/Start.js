@@ -26,10 +26,9 @@ const BPlusTree = require('bplustree');
 //default order: 6
 let tree = new BPlusTree()
 
-let outputTable, searchResultTable, single_search_button, range_search_button;
-let single_search_returned_key = []
+let outputTable, searchResultTable, single_search_button, range_search_button, single_remove_button, range_remove_button;
+let single_search_returned_key = [], remove_returned_key = [], range_remove_returned_key = []
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
-let attri_cell_arr 
 
 let data = []
 
@@ -62,7 +61,11 @@ class Start extends Component {
 
       single_remove_index: '', 
       range_remove_lower_index: '', 
-      range_remove_upper_index:''
+      range_remove_upper_index:'', 
+      isSingleRemoveModalOpen: false, 
+      isRangeRemoveModalOpen: false, 
+
+      isRemoveAckModalOpen: false
     }
 
     this.toggleSearchSelectionModal = this.toggleSearchSelectionModal.bind()
@@ -71,6 +74,27 @@ class Start extends Component {
     this.toggleUploadAckModal = this.toggleUploadAckModal.bind()
     this.toggleResultPanelModal = this.toggleResultPanelModal.bind()
     this.toggleErrorModal = this.toggleErrorModal.bind()
+    this.toggleSingleRemoveModal = this.toggleSingleRemoveModal.bind()
+    this.toggleRangeRemoveModal = this.toggleRangeRemoveModal.bind()
+    this.toggleRemoveAckModal = this.toggleRemoveAckModal.bind()
+  }
+
+  toggleRemoveAckModal = () => {
+    this.setState({
+      isRemoveAckModalOpen: !this.state.isRemoveAckModalOpen
+    })
+  }
+
+  toggleSingleRemoveModal = () => {
+    this.setState({
+      isSingleRemoveModalOpen: !this.state.isSingleRemoveModalOpen
+    })
+  }
+
+  toggleRangeRemoveModal = () => {
+    this.setState({
+      isRangeRemoveModalOpen: !this.state.isRangeRemoveModalOpen
+    })
   }
 
   toggleErrorModal = () => {
@@ -226,6 +250,55 @@ class Start extends Component {
     }
   }
 
+  onSingleRemoveKeySubmit = (e) => {
+    e.preventDefault();
+    if (this.state.single_remove_index == '') {
+      this.toggleErrorModal()
+    } else {
+      remove_returned_key = tree.fetch(Number(this.state.single_remove_index))
+      console.log("the user single remove key is: ", remove_returned_key)
+      this.updateTable()
+    }
+  }
+
+  updateTable = () => {
+    let temp = []
+    for (var j = 0; j < arri_array.length; j++) {
+      temp[j] = { value: "REMOVED"}
+    }
+    for (var i = 0; i < remove_returned_key.length; i++) {
+      data[remove_returned_key[i]] = temp
+    }
+    console.log("the whole data matrix after remove is: ", data)
+    outputTable = ''
+
+    //clear current modals and indices
+    this.setState({
+      single_remove_index: '', 
+      range_remove_lower_index: '',
+      range_remove_upper_index: ''
+    })
+    if (this.state.isRangeRemoveModalOpen == true) {
+      this.toggleRangeRemoveModal()
+    }
+    if (this.state.isSingleRemoveModalOpen == true) {
+      this.toggleSingleRemoveModal()
+    }
+    // this.fillNewTable()
+    this.toggleRemoveAckModal()
+  }
+
+  fillNewTable = () => {
+    outputTable = <Jumbotron >
+                      <Row>
+                          Below Is The Entire Data Set
+                      </Row>
+                      <Spreadsheet data={data} />
+                  </Jumbotron>
+    
+    this.toggleRemoveAckModal()
+  }
+
   fileHandler = (event) => {
     let fileObj = event.target.files[0];
     console.log("file change!")
@@ -249,7 +322,6 @@ class Start extends Component {
   fillOutputTable = () => {
     let row_copy = this.state.rows
     let col_copy = this.state.cols
-    attri_cell_arr = [{name: "#", key: 0}]
     if (row_copy.length != 0 || col_copy.length != 0) {
       console.log("row is: ", row_copy)
       console.log("col is", col_copy)
@@ -281,7 +353,9 @@ class Start extends Component {
                           <Spreadsheet data={data} />
                       </Jumbotron>
         single_search_button = <Button color="primary" onClick={this.toggleRangeSearchModal} >Range Index Retrieval</Button> 
-        range_search_button = <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Index Retrieval</Button> 
+        range_search_button = <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Index Retrieval</Button>
+        range_remove_button = <Button color="primary" onClick={this.toggleRangeRemoveModal} >Range Index Removal</Button>  
+        single_remove_button = <Button color="primary" onClick={this.toggleSingleRemoveModal} >Single Index Removal</Button> 
         console.log("create TREE")
         for (var i = 0; i < row_copy.length; i++) {
           tree.store(row_copy[i][0], i)
@@ -319,11 +393,22 @@ class Start extends Component {
                   {single_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
                   {range_search_button}
+                  &nbsp;&nbsp;&nbsp;&nbsp;
+                  {range_remove_button}
+                  &nbsp;&nbsp;&nbsp;&nbsp;
+                  {single_remove_button}
 
                   <Modal isOpen={this.state.isUploadAckModalOpen} toggle={this.toggleUploadAckModal} >
                     <ModalHeader toggle={this.toggleUploadAckModal}>Upload Seccessful! </ModalHeader>
                     <ModalBody>
                       <Button color="primary" onClick={this.onRetrieveSelectionClick} type="submit">View and Select Data Retrieval Option</Button> {'   '}
+                    </ModalBody>
+                  </Modal>
+
+                  <Modal isOpen={this.state.isRemoveAckModalOpen} toggle={this.toggleRemoveAckModal} >
+                    <ModalHeader toggle={this.toggleRemoveAckModal}>Remove Seccessful! </ModalHeader>
+                    <ModalBody>
+                      <Button color="primary" onClick={this.fillNewTable} type="submit">View New Content</Button> {'   '}
                     </ModalBody>
                   </Modal>
 
@@ -376,6 +461,19 @@ class Start extends Component {
                     </ModalHeader>
                     <ModalBody>
                         <Button color="primary" onClick={this.toggleErrorModal} type="submit">Try Again</Button> 
+                    </ModalBody>
+                  </Modal>
+
+                  <Modal isOpen={this.state.isSingleRemoveModalOpen} toggle={this.toggleSingleRemoveModal} >
+                    <ModalHeader toggle={this.toggleSingleRemoveModal}>Please enter your remove index. (First Attribute Value) </ModalHeader>
+                    <ModalBody>
+                      <Form onSubmit={this.onSingleRemoveKeySubmit}>
+                        <FormGroup>
+                          <Label for="single_remove_index">Single Remove Index</Label>
+                          <Input type="text" pattern="[0-9]*" name="single_remove_index" id="single_remove_index" onChange={e => this.handleSearchIndexChange(e)} />
+                        </FormGroup>
+                        <Button color="primary" className='single_remove_submit' type="submit">Remove Entries</Button> {' '}
+                      </Form>
                     </ModalBody>
                   </Modal>
 
