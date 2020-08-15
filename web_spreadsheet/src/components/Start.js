@@ -267,8 +267,17 @@ class Start extends Component {
       temp[j] = { value: "REMOVED"}
     }
     for (var i = 0; i < remove_returned_key.length; i++) {
-      data[remove_returned_key[i]] = temp
+      data[remove_returned_key[i]] =  temp
     }
+
+    //remove items from the tree
+    if (remove_returned_key.length !== 0) {
+      console.log("tree update")
+      let removed_val = tree.remove(Number(7))
+      console.log("the removed value is: ", removed_val)
+      console.log("after remove", tree.fetch(7))
+    }
+
     console.log("the whole data matrix after remove is: ", data)
     outputTable = ''
 
@@ -284,7 +293,6 @@ class Start extends Component {
     if (this.state.isSingleRemoveModalOpen == true) {
       this.toggleSingleRemoveModal()
     }
-    // this.fillNewTable()
     this.toggleRemoveAckModal()
   }
 
@@ -354,12 +362,12 @@ class Start extends Component {
                       </Jumbotron>
         single_search_button = <Button color="primary" onClick={this.toggleRangeSearchModal} >Range Index Retrieval</Button> 
         range_search_button = <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Index Retrieval</Button>
-        range_remove_button = <Button color="primary" onClick={this.toggleRangeRemoveModal} >Range Index Removal</Button>  
         single_remove_button = <Button color="primary" onClick={this.toggleSingleRemoveModal} >Single Index Removal</Button> 
         console.log("create TREE")
         for (var i = 0; i < row_copy.length; i++) {
           tree.store(row_copy[i][0], i)
         }
+        console.log("key type is: ", typeof(row_copy[0][0]))
       }
       
       this.setState({
@@ -393,8 +401,6 @@ class Start extends Component {
                   {single_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
                   {range_search_button}
-                  &nbsp;&nbsp;&nbsp;&nbsp;
-                  {range_remove_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
                   {single_remove_button}
 
@@ -476,7 +482,6 @@ class Start extends Component {
                       </Form>
                     </ModalBody>
                   </Modal>
-
             </Container>
         </Jumbotron>
         {searchResultTable}
