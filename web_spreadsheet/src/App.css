@@ -24,6 +24,28 @@
   color: white;
 }
 
+.range-search-button {
+  color: white !important;
+  background-color: #fa744f !important;
+  border-color: #fa744f !important;
+}
+
+.single-search-button {
+  color:white !important;
+  background-color: #16817a !important;
+  border-color: #16817a !important;
+  margin-left:20px;
+  
+}
+
+.data-below-text {
+  font-size: 100;
+}
+
+.upload-button {
+  border-color: #f8a68d;
+}
+
 .logo-jumbo {
   background-color: #f8a68d !important;
   height: 120px !important;

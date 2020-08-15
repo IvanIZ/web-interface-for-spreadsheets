@@ -4,13 +4,6 @@ import logo from '../logo.svg';
 import '../App.css';
 import {ExcelRenderer, OutTable} from 'react-excel-renderer';
 import {
-  Collapse,
-  Navbar,
-  NavbarToggler,
-  NavbarBrand,
-  Nav,
-  NavItem,
-  NavLink,
   Container,
   Row,
   Col,
@@ -20,7 +13,6 @@ import {
 } from 'reactstrap';
 import Spreadsheet from "react-spreadsheet";
 
-import { ReactCanvasGrid } from 'react-canvas-grid';
 const BPlusTree = require('bplustree');
 
 //default order: 6
@@ -31,8 +23,6 @@ let single_search_returned_key = [], remove_returned_key = [], range_remove_retu
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
 
 let data = []
-
-const columnLabels = ["Name", "Age"];
 
 class Start extends Component {
 
@@ -170,10 +160,22 @@ class Start extends Component {
     }
     
     console.log("final single search result is ", resultMatrix)
-    searchResultTable = <Jumbotron>
-                             Below Is The Retrieved Data
-                            <Spreadsheet data={resultMatrix} />
+    if (resultMatrix.length == 0) {
+      searchResultTable = <Jumbotron>
+                              <div>
+                                  No Entries Are Retrieved
+                              </div>
+                          </Jumbotron>
+    } else {
+      searchResultTable = <Jumbotron>
+                            <div>
+                                Below Is The Retrieved Data
+                            </div>
+                             <div>
+                                <Spreadsheet data={resultMatrix} />
+                             </div>
                         </Jumbotron>
+    }
     this.toggleResultPanelModal()
   }
 
@@ -183,12 +185,22 @@ class Start extends Component {
       resultMatrix[i] = data[range_search_returned_key[i]]
     }
     console.log("final range search result ", resultMatrix)
-    searchResultTable = <Jumbotron>
-                            <Row>
-                               Below Is The Retrieved Data
-                            </Row>
-                            <Spreadsheet data={resultMatrix} />
+    if (resultMatrix.length == 0) {
+      searchResultTable = <Jumbotron>
+                              <div>
+                                  No Entries Are Retrieved
+                              </div>
+                          </Jumbotron>
+    } else {
+      searchResultTable = <Jumbotron>
+                            <div>
+                                Below Is The Retrieved Data
+                            </div>
+                             <div>
+                                <Spreadsheet data={resultMatrix} />
+                             </div>
                         </Jumbotron>
+    }
     //clear current index values
     this.setState({
       range_search_lower_index: '',
@@ -355,13 +367,15 @@ class Start extends Component {
 
       if (tree.depth(true) == 0) {
         outputTable = <Jumbotron >
-                          <Row>
+                          <div className='data-below-text'>
                               Below Is The Entire Data Set
-                          </Row>
-                          <Spreadsheet data={data} />
+                          </div>
+                          <div>
+                              <Spreadsheet data={data} />
+                          </div>
                       </Jumbotron>
-        single_search_button = <Button color="primary" onClick={this.toggleRangeSearchModal} >Range Index Retrieval</Button> 
-        range_search_button = <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Index Retrieval</Button>
+        range_search_button = <Button size='lg' className='range-search-button' color="primary" onClick={this.toggleRangeSearchModal} >Range Index Retrieval</Button> 
+        single_search_button = <Button size='lg' className='single-search-button' color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Index Retrieval</Button>
         single_remove_button = <Button color="primary" onClick={this.toggleSingleRemoveModal} >Single Index Removal</Button> 
         console.log("create TREE")
         for (var i = 0; i < row_copy.length; i++) {
@@ -389,25 +403,28 @@ class Start extends Component {
          <Jumbotron className='logo-jumbo'>
           
           </Jumbotron >
-          <Jumbotron fluid>
-            <Container fluid>
+          <div>
+
+          
+          <Jumbotron >
+            {/* <Container fluid> */}
                   <h1 className="display-3"> Welcome to spreadsheet web!</h1>
-                  <p className="lead">This is a simple web interface that allows you to upload spreadsheets, and retrieve and removal data.</p>
+                  <p className="lead">This is a simple web interface that allows you to upload spreadsheets and retrieve data.</p>
                   <hr className="my-2" />
-                  <p>Please upload your file below</p>
+                  <p>Please upload your spreadsheet below</p>
                   <p className="lead">
                     <input type="file" onChange={this.fileHandler.bind(this)} style={{"padding":"10px"}} />
                   </p>
-                  {single_search_button}
-                  &nbsp;&nbsp;&nbsp;&nbsp;
                   {range_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
-                  {single_remove_button}
+                  {single_search_button}
+                  {/* &nbsp;&nbsp;&nbsp;&nbsp;
+                  {single_remove_button} */}
 
                   <Modal isOpen={this.state.isUploadAckModalOpen} toggle={this.toggleUploadAckModal} >
                     <ModalHeader toggle={this.toggleUploadAckModal}>Upload Seccessful! </ModalHeader>
                     <ModalBody>
-                      <Button color="primary" onClick={this.onRetrieveSelectionClick} type="submit">View and Select Data Retrieval Option</Button> {'   '}
+                      <Button color="primary" onClick={this.onRetrieveSelectionClick} type="submit" block>View and Select Data Retrieval Option</Button> {'   '}
                     </ModalBody>
                   </Modal>
 
@@ -418,7 +435,7 @@ class Start extends Component {
                     </ModalBody>
                   </Modal>
 
-                  <Modal isOpen={this.state.isSingelSearchModalOpen} toggle={this.toggleSingleSearchModal} >
+                  <Modal size='lg' isOpen={this.state.isSingelSearchModalOpen} toggle={this.toggleSingleSearchModal} >
                     <ModalHeader toggle={this.toggleSingleSearchModal}>Please enter your search index. (First Attribute Value) </ModalHeader>
                     <ModalBody>
                       <Form onSubmit={this.onSingleSearchKeySubmit}>
@@ -426,12 +443,12 @@ class Start extends Component {
                           <Label for="single_search_index">Single Search Index</Label>
                           <Input type="text" pattern="[0-9]*" name="single_search_index" id="single_search_index" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
-                        <Button color="primary" className='single_search_submit' type="submit">Search</Button> {' '}
+                        <Button size='lg' color="primary" className='single_search_submit' type="submit" >Search</Button> {' '}
                       </Form>
                     </ModalBody>
                   </Modal>
 
-                  <Modal isOpen={this.state.isRangeSearchModalOpen} toggle={this.toggleRangeSearchModal} >
+                  <Modal size='lg' isOpen={this.state.isRangeSearchModalOpen} toggle={this.toggleRangeSearchModal} >
                     <ModalHeader toggle={this.toggleRangeSearchModal}>Please enter upper and lower search index. (First Attribute Value) </ModalHeader>
                     <ModalBody>
                       <Form onSubmit={this.onRangeSearchIndexSubmit}>
@@ -443,7 +460,7 @@ class Start extends Component {
                           <Label for="range_search_upper_index">Upper Bound</Label>
                           <Input type="text" pattern="[0-9]*" name="range_search_upper_index" id="range_search_upper_index" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
-                        <Button color="primary" className='range_search_submit' type="submit">Search</Button> {' '}
+                        <Button color="primary" className='range_search_submit' type="submit" block>Search</Button> {' '}
                       </Form>
                     </ModalBody>
                     <ModalFooter>
@@ -457,7 +474,7 @@ class Start extends Component {
                       Data is retrieved. Click view to see the result
                     </ModalHeader>
                     <ModalBody>
-                        <Button color="primary" onClick={this.toFrontPage} type="submit">View</Button> 
+                        <Button color="primary" onClick={this.toFrontPage} type="submit" block>View</Button> 
                     </ModalBody>
                   </Modal>
 
@@ -466,7 +483,7 @@ class Start extends Component {
                       There is somgthing wrong with your input. Please try again
                     </ModalHeader>
                     <ModalBody>
-                        <Button color="primary" onClick={this.toggleErrorModal} type="submit">Try Again</Button> 
+                        <Button color="primary" onClick={this.toggleErrorModal} type="submit" block>Try Again</Button> 
                     </ModalBody>
                   </Modal>
 
@@ -482,8 +499,9 @@ class Start extends Component {
                       </Form>
                     </ModalBody>
                   </Modal>
-            </Container>
+            {/* </Container> */}
         </Jumbotron>
+        </div>
         {searchResultTable}
         {outputTable}
       </div>
