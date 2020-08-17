@@ -29,6 +29,7 @@ class Start extends Component {
   constructor() {
     super();
     this.state = {
+      first_time_upload: true,
       rows: [],
       cols: [],
       attri: [],
@@ -322,6 +323,16 @@ class Start extends Component {
   fileHandler = (event) => {
     let fileObj = event.target.files[0];
     console.log("file change!")
+
+    // delete previous table, except for first time upload
+    if (this.state.first_time_upload) {
+      this.setState({
+        first_time_upload: false
+      })
+    } else {
+      this.deleteDBTable()
+    }
+
     tree = new BPlusTree()
   
     //just pass the fileObj as parameter
@@ -335,7 +346,7 @@ class Start extends Component {
           rows: resp.rows
         });
       }
-    });   
+    });  
     this.toggleUploadAckModal() 
   }
 
@@ -363,6 +374,9 @@ class Start extends Component {
         data[i] = temp
       }
       console.log("the value of entire data matrix is: ", data)
+
+      //create new DB table
+      this.createDBTable(col_copy.length)
 
 
       if (tree.depth(true) == 0) {
@@ -394,9 +408,15 @@ class Start extends Component {
     }
   }
 
-  testCreateTable = (e) => {
-    console.log("going to call fetch")
-    fetch("/database/test")
+  createDBTable = (num_attr) => {
+    console.log("going to test create table")
+    let url = "/database/create-table/" + num_attr
+    fetch(url)
+  }
+
+  deleteDBTable = (e) => {
+    console.log("going to test delete table")
+    fetch("/database/delete-table")
   }
 
 
@@ -423,8 +443,10 @@ class Start extends Component {
                   {range_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
                   {single_search_button}
-                  &nbsp;&nbsp;&nbsp;&nbsp;
-                  <Button color="primary" onClick={this.testCreateTable} >Test</Button> 
+                  {/* &nbsp;&nbsp;&nbsp;&nbsp;
+                  <Button color="primary" onClick={this.testCreate} >Test</Button>  */}
+                  {/* &nbsp;&nbsp;&nbsp;&nbsp;
+                  <Button color="primary" onClick={this.deleteDBTable} >delete</Button>  */}
                   
 
                   <Modal isOpen={this.state.isUploadAckModalOpen} toggle={this.toggleUploadAckModal} >
