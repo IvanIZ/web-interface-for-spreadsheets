@@ -23,13 +23,14 @@ let single_search_returned_key = [], remove_returned_key = [], range_remove_retu
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
 
 let data = []
+let first_time_upload = true;
 
 class Start extends Component {
 
   constructor() {
     super();
     this.state = {
-      first_time_upload: true,
+      // first_time_upload: true,
       rows: [],
       cols: [],
       attri: [],
@@ -323,12 +324,11 @@ class Start extends Component {
   fileHandler = (event) => {
     let fileObj = event.target.files[0];
     console.log("file change!")
+    console.log("first time upload is: "  + first_time_upload)
 
     // delete previous table, except for first time upload
-    if (this.state.first_time_upload) {
-      this.setState({
-        first_time_upload: false
-      })
+    if (first_time_upload) {
+      first_time_upload = false
     } else {
       this.deleteDBTable()
     }

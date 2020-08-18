@@ -63,13 +63,13 @@ router.get('/delete-table', (req, res) => {
       }
     console.log('Table deleted!')
   })
+  return res.json(results)
 })
 
 
 //insert tuples from spreadsheet to DB
 router.post('/insert-content', (req, res) => {
   console.log("Trying to insert the tuples")
-  // console.log("the data matrix passed to backend is: " + req.body.formResults.matrix)
   
   //data matrix and number of attributes in the current table
   let matrix = []
@@ -85,26 +85,6 @@ router.post('/insert-content', (req, res) => {
       queryStart = queryStart + 'attribute' + (i + 1) + ') VALUES ?'
     }
   }
-
-  // for (var i = 0; i < matrix.length; i++) {
-  //   let queryEnd = ' VALUES ('
-  //   for (var j = 0; j < num_attr; j++) {
-  //     if (j !== num_attr - 1) {
-  //       queryEnd = queryEnd + matrix[i][j] + ','
-  //     } else {
-  //       queryEnd = queryEnd + matrix[i][j] + ')'
-  //     }
-  //   }
-  //   let queryString = queryStart + queryEnd
-  //   console.log("the generated query string to insert is: " + queryString)
-  //   getConnection().query(queryString, (err, results, fields) => {
-  //     if (err) {
-  //         console.log("Failed to insert new user: " + err)
-  //         res.sendStatus(500)
-  //         return
-  //     }
-  //   })
-  // }
   console.log("the generated query string to insert is: " + queryStart)
     getConnection().query(queryStart, [matrix], (err, results, fields) => {
       if (err) {
