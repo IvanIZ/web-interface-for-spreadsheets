@@ -398,14 +398,14 @@ class Start extends Component {
 
 
       if (tree.depth(true) == 0) {
-        outputTable = <Jumbotron >
-                          <div className='data-below-text'>
-                              Below Is The Entire Data Set
-                          </div>
-                          <div>
-                              <Spreadsheet data={data} />
-                          </div>
-                      </Jumbotron>
+        // outputTable = <Jumbotron >
+        //                   <div className='data-below-text'>
+        //                       Below Is The Entire Data Set
+        //                   </div>
+        //                   <div>
+        //                       <Spreadsheet data={data} />
+        //                   </div>
+        //               </Jumbotron>
         range_search_button = <Button size='lg' className='range-search-button' color="primary" onClick={this.toggleRangeSearchModal} >Range Index Retrieval</Button> 
         single_search_button = <Button size='lg' className='single-search-button' color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Index Retrieval</Button>
         single_remove_button = <Button color="primary" onClick={this.toggleSingleRemoveModal} >Single Index Removal</Button> 

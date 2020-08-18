@@ -27,9 +27,9 @@ router.get('/create-table/:num_attr', (req, res) => {
     let queryString = "CREATE TABLE excel (id INT AUTO_INCREMENT PRIMARY KEY, "
     for (var i = 0; i < Number(req.params.num_attr); i++) {
       if (i !== Number(req.params.num_attr) - 1) {
-        queryString = queryString + "attribute" + (i + 1) + " INT, "
+        queryString = queryString + "attribute" + (i + 1) + " VARCHAR(255), "
       } else {
-        queryString = queryString + "attribute" + (i + 1) + " INT)"
+        queryString = queryString + "attribute" + (i + 1) + " VARCHAR(255))"
       }
     }
     console.log("the query string is: " + queryString)
@@ -86,13 +86,13 @@ router.post('/insert-content', (req, res) => {
     }
   }
   console.log("the generated query string to insert is: " + queryStart)
-    getConnection().query(queryStart, [matrix], (err, results, fields) => {
-      if (err) {
-          console.log("Failed to insert new user: " + err)
-          res.sendStatus(500)
-          return
-      }
-    })
+  getConnection().query(queryStart, [matrix], (err, results, fields) => {
+    if (err) {
+        console.log("Failed to insert new user: " + err)
+        res.sendStatus(500)
+        return
+    }
+  })
 })
 
 module.exports = router;
