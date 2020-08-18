@@ -350,7 +350,7 @@ class Start extends Component {
     this.toggleUploadAckModal() 
   }
 
-  fillOutputTable = () => {
+  fillOutputTable = async () => {
     let row_copy = this.state.rows
     let col_copy = this.state.cols
     if (row_copy.length != 0 || col_copy.length != 0) {
@@ -376,7 +376,25 @@ class Start extends Component {
       console.log("the value of entire data matrix is: ", data)
 
       //create new DB table
-      this.createDBTable(col_copy.length)
+      console.log("going to test create table")
+      let num_attr = col_copy.length
+      let url = "/database/create-table/" + Number(num_attr)
+      await fetch(url)
+
+
+      //insert content into DB table
+      let formResults = {
+        matrix: row_copy,
+        num_attr: col_copy.length
+      }
+      //POST req here
+      const requestOptions = {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({formResults})
+      };
+      fetch('/database/insert-content', requestOptions)
+    
 
 
       if (tree.depth(true) == 0) {
