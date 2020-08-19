@@ -43,7 +43,7 @@ app.use(function(err, req, res, next) {
 
 const port = process.env.PORT || 3001
 app.listen(port, () => {
-  console.log("Server is up and listening on test...")
+  console.log("Backend server is up and listening on port 3001...")
 })
 
 module.exports = app;

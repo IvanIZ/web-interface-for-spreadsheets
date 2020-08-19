@@ -12,18 +12,27 @@ import {
   Table, Modal, ModalHeader, ModalFooter, ModalBody, Form, FormGroup, Label, Input
 } from 'reactstrap';
 import Spreadsheet from "react-spreadsheet";
-
-const BPlusTree = require('bplustree');
+import { ReactCanvasGrid } from 'react-canvas-grid';
+import InfiniteScroll from "react-infinite-scroll-component";
 
 //default order: 6
+const BPlusTree = require('bplustree');
 let tree = new BPlusTree()
 
 let outputTable, searchResultTable, single_search_button, range_search_button, single_remove_button, range_remove_button;
 let single_search_returned_key = [], remove_returned_key = [], range_remove_returned_key = []
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
 
-let data = []
+let data = [], dataMatrix = [], columns = []
 let first_time_upload = true;
+let DIV_WIDTH = 1260
+const style = {
+  height: 2500,
+  width: DIV_WIDTH,
+  border: "0.2px solid gray",
+  margin: 0,
+  padding: 0
+};
 
 class Start extends Component {
 
@@ -57,7 +66,9 @@ class Start extends Component {
       isSingleRemoveModalOpen: false, 
       isRangeRemoveModalOpen: false, 
 
-      isRemoveAckModalOpen: false
+      isRemoveAckModalOpen: false,
+      items: Array.from({ length: 0 }),
+      hasMore: false
     }
 
     this.toggleSearchSelectionModal = this.toggleSearchSelectionModal.bind()
@@ -264,52 +275,6 @@ class Start extends Component {
     }
   }
 
-  onSingleRemoveKeySubmit = (e) => {
-    e.preventDefault();
-    if (this.state.single_remove_index == '') {
-      this.toggleErrorModal()
-    } else {
-      remove_returned_key = tree.fetch(Number(this.state.single_remove_index))
-      console.log("the user single remove key is: ", remove_returned_key)
-      this.updateTable()
-    }
-  }
-
-  updateTable = () => {
-    let temp = []
-    for (var j = 0; j < arri_array.length; j++) {
-      temp[j] = { value: "REMOVED"}
-    }
-    for (var i = 0; i < remove_returned_key.length; i++) {
-      data[remove_returned_key[i]] =  temp
-    }
-
-    //remove items from the tree
-    if (remove_returned_key.length !== 0) {
-      console.log("tree update")
-      let removed_val = tree.remove(Number(7))
-      console.log("the removed value is: ", removed_val)
-      console.log("after remove", tree.fetch(7))
-    }
-
-    console.log("the whole data matrix after remove is: ", data)
-    outputTable = ''
-
-    //clear current modals and indices
-    this.setState({
-      single_remove_index: '', 
-      range_remove_lower_index: '',
-      range_remove_upper_index: ''
-    })
-    if (this.state.isRangeRemoveModalOpen == true) {
-      this.toggleRangeRemoveModal()
-    }
-    if (this.state.isSingleRemoveModalOpen == true) {
-      this.toggleSingleRemoveModal()
-    }
-    this.toggleRemoveAckModal()
-  }
-
   fillNewTable = () => {
     outputTable = <Jumbotron >
                       <Row>
@@ -325,6 +290,10 @@ class Start extends Component {
     let fileObj = event.target.files[0];
     console.log("file change!")
     console.log("first time upload is: "  + first_time_upload)
+    this.setState({
+      hasMore: true
+    })
+    outputTable = ''
 
     // delete previous table, except for first time upload
     if (first_time_upload) {
@@ -361,9 +330,31 @@ class Start extends Component {
       for (var i = 0; i < col_copy.length; i++) {
         arri_array[i] = { value: col_copy[i].name}
       }
+      console.log("the arri_array is: ")
       console.log(arri_array)
 
-      //fill in entire data matrix
+      //fill in attribute row (i.e. columns)
+      for (var i = 0; i < col_copy.length; i++) {
+        columns[i] = { fieldName: 'attr' + i, width: (DIV_WIDTH - col_copy.length) / col_copy.length }
+      }
+      console.log("the columns are: ")
+      console.log(columns)
+
+      for (var i = 0; i < row_copy.length; i++) {
+        let jsonObj = {}
+        for (var j = 0; j < col_copy.length; j++) {
+          let item = {text: row_copy[i][j]}
+          jsonObj['attr' + j] = item
+        }
+        dataMatrix[i] = jsonObj
+        if (i == 49) {
+          break
+        } 
+      }
+      console.log("the data matrix in json format is: ")
+      console.log(dataMatrix)
+
+      //fill in whole data
       data = []
       searchResultTable = ''
       for (var i = 0; i < row_copy.length; i++) {
@@ -373,14 +364,12 @@ class Start extends Component {
         }
         data[i] = temp
       }
-      console.log("the value of entire data matrix is: ", data)
 
       //create new DB table
       console.log("going to test create table")
       let num_attr = col_copy.length
       let url = "/database/create-table/" + Number(num_attr)
       await fetch(url)
-
 
       //insert content into DB table
       let formResults = {
@@ -406,13 +395,35 @@ class Start extends Component {
         //                       <Spreadsheet data={data} />
         //                   </div>
         //               </Jumbotron>
+        outputTable =  <InfiniteScroll
+                            dataLength={this.state.items.length}
+                            next={this.fetchMoreData}
+                            hasMore={this.state.hasMore}
+                            loader={<h4>Loading...</h4>}
+                            endMessage={
+                              <p style={{ textAlign: "center" }}>
+                                <b>Yay! You have seen it all</b>
+                              </p>
+                            }
+                            >
+                            {this.state.items.map((i, index) => (
+                              <div style={style} key={index}>
+                                <ReactCanvasGrid
+                                                    cssHeight={'2499px'}
+                                                    columns={columns}
+                                                    data={dataMatrix}
+                                                    rowHeight={49}
+                                      />
+                              </div>
+                            ))}
+                          </InfiniteScroll>
         range_search_button = <Button size='lg' className='range-search-button' color="primary" onClick={this.toggleRangeSearchModal} >Range Index Retrieval</Button> 
         single_search_button = <Button size='lg' className='single-search-button' color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Index Retrieval</Button>
         single_remove_button = <Button color="primary" onClick={this.toggleSingleRemoveModal} >Single Index Removal</Button> 
-        console.log("create TREE")
-        for (var i = 0; i < row_copy.length; i++) {
-          tree.store(row_copy[i][5], i)
-        }
+        // console.log("create TREE")
+        // for (var i = 0; i < row_copy.length; i++) {
+        //   tree.store(row_copy[i][5], i)
+        // }
         console.log("key type is: ", typeof(row_copy[0][0]))
       }
       
@@ -435,6 +446,35 @@ class Start extends Component {
   deleteDBTable = (e) => {
     console.log("going to test delete table")
     fetch("/database/delete-table")
+  }
+
+  fetchMoreData = () => {
+    if (this.state.items.length >= Math.ceil(this.state.rows.length / 50) ) {
+      this.setState({ hasMore: false });
+      return;
+    }
+    // a fake async api call like which sends
+    // 20 more records in 1.5 secs
+    setTimeout(() => {
+      this.setState({
+        items: this.state.items.concat(Array.from({ length: 1 }))
+      });
+    }, 1500);
+  };
+
+  fetchMoreRows = () => {
+    let url = '/database/fetch-fifty-rows/' + 4
+      fetch(url)
+      .then(res => res.json())      
+      .then(data => {
+        console.log("reach this point")
+        console.log(data)
+        if (data.length === 0) {
+          console.log("No data is fetched by fetchMoreRows function")
+        } else {
+
+        }
+      });
   }
 
 
@@ -461,10 +501,8 @@ class Start extends Component {
                   {range_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
                   {single_search_button}
-                  {/* &nbsp;&nbsp;&nbsp;&nbsp;
-                  <Button color="primary" onClick={this.testCreate} >Test</Button>  */}
-                  {/* &nbsp;&nbsp;&nbsp;&nbsp;
-                  <Button color="primary" onClick={this.deleteDBTable} >delete</Button>  */}
+                  &nbsp;&nbsp;&nbsp;&nbsp;
+                  <Button color="primary" onClick={this.fetchMoreRows} >fetch test</Button>
                   
 
                   <Modal isOpen={this.state.isUploadAckModalOpen} toggle={this.toggleUploadAckModal} >
@@ -532,24 +570,33 @@ class Start extends Component {
                         <Button color="primary" onClick={this.toggleErrorModal} type="submit" block>Try Again</Button> 
                     </ModalBody>
                   </Modal>
-
-                  <Modal isOpen={this.state.isSingleRemoveModalOpen} toggle={this.toggleSingleRemoveModal} >
-                    <ModalHeader toggle={this.toggleSingleRemoveModal}>Please enter your remove index. (First Attribute Value) </ModalHeader>
-                    <ModalBody>
-                      <Form onSubmit={this.onSingleRemoveKeySubmit}>
-                        <FormGroup>
-                          <Label for="single_remove_index">Single Remove Index</Label>
-                          <Input type="text" pattern="[0-9]*" name="single_remove_index" id="single_remove_index" onChange={e => this.handleSearchIndexChange(e)} />
-                        </FormGroup>
-                        <Button color="primary" className='single_remove_submit' type="submit">Remove Entries</Button> {' '}
-                      </Form>
-                    </ModalBody>
-                  </Modal>
             {/* </Container> */}
         </Jumbotron>
         </div>
         {searchResultTable}
-        {outputTable}
+        {/* {outputTable} */}
+        <InfiniteScroll
+          dataLength={this.state.items.length}
+          next={this.fetchMoreData}
+          hasMore={this.state.hasMore}
+          loader={<h4>Loading...</h4>}
+          endMessage={
+            <p style={{ textAlign: "center" }}>
+              <b>Yay! You have seen it all</b>
+            </p>
+          }
+          >
+          {this.state.items.map((i, index) => (
+            <div style={style} key={index}>
+              <ReactCanvasGrid
+                                  cssHeight={'2499px'}
+                                  columns={columns}
+                                  data={dataMatrix}
+                                  rowHeight={49}
+                    />
+            </div>
+          ))}
+        </InfiniteScroll>
       </div>
 
     );

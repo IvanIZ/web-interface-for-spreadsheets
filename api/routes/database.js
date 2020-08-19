@@ -95,4 +95,29 @@ router.post('/insert-content', (req, res) => {
   })
 })
 
+
+//get the next 50 rows from database with id greater than start_id
+router.get('/fetch-fifty-rows/:start_id', (req, res) => {
+  console.log("Fetching 50 more rows with starting id: " + req.params.start_id)
+
+  const connection = getConnection();
+
+  const start_id = req.params.start_id;
+  const end_id = start_id + 50;
+  const queryString = "SELECT * FROM excel WHERE id > ? AND id <= ?";
+  connection.query(queryString, [start_id, end_id], (err, rows, fields) => {
+    if (err) {
+      console.log("Failed to fetch 50 more rows: " + err);
+      res.sendStatus(500);
+      return;
+    }
+
+    console.log("I think we fetched 50 more rows seccessfully")
+    console.log(rows)
+    res.json(rows)
+  })
+
+  //res.end()
+});
+
 module.exports = router;
