@@ -27,7 +27,8 @@ let data = [], dataMatrix = [], columns = [], buffer = []
 let first_time_upload = true;
 let DIV_WIDTH = 1260
 let PREFETCH_SIZE = 50
-let current_fetch_index = 49
+let current_fetch_index = 50
+let num_attr = 0;
 const style = {
   height: 2500,
   width: DIV_WIDTH,
@@ -70,7 +71,8 @@ class Start extends Component {
 
       isRemoveAckModalOpen: false,
       items: Array.from({ length: 0 }),
-      hasMore: false
+      hasMore: false,
+      load_from_buffer_to_matrix: false
     }
 
     this.toggleSearchSelectionModal = this.toggleSearchSelectionModal.bind()
@@ -293,7 +295,8 @@ class Start extends Component {
     console.log("file change!")
     console.log("first time upload is: "  + first_time_upload)
     this.setState({
-      hasMore: true
+      hasMore: true, 
+      load_from_buffer_to_matrix: false //set load to false s.t. the first display does not come from buffer
     })
     outputTable = ''
 
@@ -335,18 +338,29 @@ class Start extends Component {
       console.log("the arri_array is: ")
       console.log(arri_array)
 
-      //fill in attribute row (i.e. columns)
-      for (var i = 0; i < col_copy.length; i++) {
-        columns[i] = { fieldName: 'attr' + i, width: (DIV_WIDTH - col_copy.length) / col_copy.length }
+      //fill in attribute row (i.e. columns), with id as the first column
+      for (var i = 0; i <= col_copy.length; i++) {
+        if (i == 0) {
+          columns[i] = { fieldName: 'id', width: (DIV_WIDTH - col_copy.length - 1) / (col_copy.length + 1) }
+        } else {
+          columns[i] = { fieldName: 'attr' + i, width: (DIV_WIDTH - col_copy.length - 1) / (col_copy.length + 1) }
+        }
       }
       console.log("the columns are: ")
       console.log(columns)
 
+
+      //initial data matrix (with id as the first column)
       for (var i = 0; i < row_copy.length; i++) {
         let jsonObj = {}
-        for (var j = 0; j < col_copy.length; j++) {
-          let item = {text: row_copy[i][j]}
-          jsonObj['attr' + j] = item
+        for (var j = 0; j <= col_copy.length; j++) {
+          if (j == 0) {
+            let item = {text: (i + 1)}
+            jsonObj['id'] = item
+          } else {
+            let item = {text: row_copy[i][j - 1]}
+            jsonObj['attr' + j] = item
+          }
         }
         dataMatrix[i] = jsonObj
         if (i == 49) {
@@ -369,7 +383,7 @@ class Start extends Component {
 
       //create new DB table
       console.log("going to test create table")
-      let num_attr = col_copy.length
+      num_attr = col_copy.length
       let url = "/database/create-table/" + Number(num_attr)
       await fetch(url)
 
@@ -457,10 +471,43 @@ class Start extends Component {
   }
 
   fetchMoreData = () => {
-    if (this.state.items.length >= Math.ceil(this.state.rows.length / 50) ) {
+    if (this.state.items.length >= Math.ceil(this.state.rows.length / 50.0) ) {
       this.setState({ hasMore: false });
+      console.log('the final number of page is: ' + Math.ceil(this.state.rows.length / 50.0))
       return;
     }
+
+    //load data from buffer to the display data matrix
+    if (this.state.load_from_buffer_to_matrix == false) {
+      this.setState({
+        load_from_buffer_to_matrix: true
+      })
+    } else {
+      for (var i = 0; i < buffer.length; i++) {
+        let jsonObj = {}
+        for (var j = 0; j <= num_attr; j++) {
+          if (j == 0) {
+            let item = {text: buffer[i].id}
+            jsonObj['id'] = item
+          } else {
+            let item = {text: buffer[i]["attribute" + j]}
+            jsonObj['attr' + j] = item
+          }
+        }
+        dataMatrix[i] = jsonObj
+        if (i == 49) {
+          break
+        } 
+      }
+
+      //pre-fetch new data into the buffer
+      this.fetchMoreRows(current_fetch_index)
+      current_fetch_index = current_fetch_index + PREFETCH_SIZE
+
+      console.log("data matrix at fetch more data is: ")
+      console.log(dataMatrix)
+    }
+
     // a fake async api call like which sends
     // 20 more records in 1.5 secs
     setTimeout(() => {
@@ -471,6 +518,7 @@ class Start extends Component {
   };
 
   fetchMoreRows = (index) => {
+    buffer = []
     let url = '/database/fetch-fifty-rows/' + index
       fetch(url)
       .then(res => res.json())      
@@ -514,6 +562,8 @@ class Start extends Component {
                   {single_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
                   <Button color="primary" onClick={this.fetchMoreRows} >fetch test</Button>
+                  &nbsp;&nbsp;&nbsp;&nbsp;
+                  <Button color="primary" onClick={this.deleteDBTable} >delete table</Button>
                   
 
                   <Modal isOpen={this.state.isUploadAckModalOpen} toggle={this.toggleUploadAckModal} >
