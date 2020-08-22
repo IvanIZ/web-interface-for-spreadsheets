@@ -93,6 +93,7 @@ router.post('/insert-content', (req, res) => {
         return
     }
   })
+  return res.json(results)
 })
 
 
@@ -103,9 +104,12 @@ router.get('/fetch-fifty-rows/:start_id', (req, res) => {
   const connection = getConnection();
 
   const start_id = req.params.start_id;
-  const end_id = start_id + 50;
-  const queryString = "SELECT * FROM excel WHERE id > ? AND id <= ?";
-  connection.query(queryString, [start_id, end_id], (err, rows, fields) => {
+  const end_id = Number(start_id) + 50;
+
+  //exclude the start, include the end
+  let queryString = "SELECT * FROM excel WHERE id > " + start_id + " AND id <= " + end_id
+  console.log("the query string to fetch 50 rows is: "  + queryString)
+  connection.query(queryString, (err, rows, fields) => {
     if (err) {
       console.log("Failed to fetch 50 more rows: " + err);
       res.sendStatus(500);
@@ -113,7 +117,7 @@ router.get('/fetch-fifty-rows/:start_id', (req, res) => {
     }
 
     console.log("I think we fetched 50 more rows seccessfully")
-    console.log(rows)
+    //console.log(rows)
     res.json(rows)
   })
 

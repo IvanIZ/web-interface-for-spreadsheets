@@ -23,9 +23,11 @@ let outputTable, searchResultTable, single_search_button, range_search_button, s
 let single_search_returned_key = [], remove_returned_key = [], range_remove_returned_key = []
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
 
-let data = [], dataMatrix = [], columns = []
+let data = [], dataMatrix = [], columns = [], buffer = []
 let first_time_upload = true;
 let DIV_WIDTH = 1260
+let PREFETCH_SIZE = 50
+let current_fetch_index = 49
 const style = {
   height: 2500,
   width: DIV_WIDTH,
@@ -382,7 +384,13 @@ class Start extends Component {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({formResults})
       };
-      fetch('/database/insert-content', requestOptions)
+      await fetch('/database/insert-content', requestOptions)
+
+      //fetch future rows into the buffer, if possible. Also increment the index
+      if (row_copy.length > 50) {
+        this.fetchMoreRows(current_fetch_index);
+        current_fetch_index = current_fetch_index + PREFETCH_SIZE;
+      }
     
 
 
@@ -462,17 +470,20 @@ class Start extends Component {
     }, 1500);
   };
 
-  fetchMoreRows = () => {
-    let url = '/database/fetch-fifty-rows/' + 4
+  fetchMoreRows = (index) => {
+    let url = '/database/fetch-fifty-rows/' + index
       fetch(url)
       .then(res => res.json())      
       .then(data => {
-        console.log("reach this point")
-        console.log(data)
         if (data.length === 0) {
           console.log("No data is fetched by fetchMoreRows function")
         } else {
-
+          //load returned data into the buffer
+          for (var i = 0; i < data.length; i++) {
+            buffer[i] = data[i]
+          }
+          console.log("the buffer is: ")
+          console.log(buffer)
         }
       });
   }
