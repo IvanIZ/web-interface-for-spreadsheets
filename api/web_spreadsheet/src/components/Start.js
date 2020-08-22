@@ -27,7 +27,7 @@ let data = [], dataMatrix = [], columns = [], buffer = []
 let first_time_upload = true;
 let DIV_WIDTH = 1260
 let PREFETCH_SIZE = 50
-let current_fetch_index = 50
+let current_fetch_index = 50 //initial pre-prefetch index
 let num_attr = 0;
 const style = {
   height: 2500,
@@ -296,8 +296,10 @@ class Start extends Component {
     console.log("first time upload is: "  + first_time_upload)
     this.setState({
       hasMore: true, 
-      load_from_buffer_to_matrix: false //set load to false s.t. the first display does not come from buffer
+      load_from_buffer_to_matrix: false, //set load to false s.t. the first display does not come from buffer
+      items: Array.from({ length: 0 })
     })
+    current_fetch_index = 50;  //reset the pre-fetch index to initial value
     outputTable = ''
 
     // delete previous table, except for first time upload
