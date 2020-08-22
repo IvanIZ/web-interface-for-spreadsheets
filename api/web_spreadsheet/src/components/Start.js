@@ -23,14 +23,28 @@ let outputTable, searchResultTable, single_search_button, range_search_button, s
 let single_search_returned_key = [], remove_returned_key = [], range_remove_returned_key = []
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
 
-let data = [], dataMatrix = [], columns = [], buffer = []
-let first_time_upload = true;
+let data = [], dataMatrix = [], columns = [], buffer = [], single_search_display_matrix = []
+let first_time_upload = true
 let DIV_WIDTH = 1260
 let PREFETCH_SIZE = 50
+
+//search result variables
+let SEARCH_RESULT_PREFETCH_SIZE = 10;
+let search_result_size = 0;
+let first_time_single_search = true;
+
 let current_fetch_index = 50 //initial pre-prefetch index
 let num_attr = 0;
 const style = {
   height: 2500,
+  width: DIV_WIDTH,
+  border: "0.2px solid gray",
+  margin: 0,
+  padding: 0
+};
+
+const search_display_style = {
+  height: 500,
   width: DIV_WIDTH,
   border: "0.2px solid gray",
   margin: 0,
@@ -54,6 +68,7 @@ class Start extends Component {
       isErrorModalOpen: false,
 
       single_search_index: '', 
+      single_search_attribute: '',
 
       isSingleSearch: false,
 
@@ -72,7 +87,12 @@ class Start extends Component {
       isRemoveAckModalOpen: false,
       items: Array.from({ length: 0 }),
       hasMore: false,
-      load_from_buffer_to_matrix: false
+      load_from_buffer_to_matrix: false, 
+
+      //retrieval display variables
+      hasMoreResult: false,
+      resultItems: Array.from({ length: 0 }), 
+      load_result_from_buffer_to_matrix: false
     }
 
     this.toggleSearchSelectionModal = this.toggleSearchSelectionModal.bind()
@@ -238,14 +258,38 @@ class Start extends Component {
     })
   }
 
-  onSingleSearchKeySubmit = (e) => {
+  onSingleSearchKeySubmit = async (e) => {
     e.preventDefault();
-    if (this.state.single_search_index == '') {
+    if (this.state.single_search_index == '' || this.state.single_search_attribute == '') {
       this.toggleErrorModal()
     } else {
-      single_search_returned_key = tree.fetch(Number(this.state.single_search_index))
-      console.log("user entered single search result key is: " , single_search_returned_key)
-      this.toggleSingleSearchModal()
+      this.toggleSingleSearchModal()  //close up the search modal
+
+      //fetch the result from the db
+      let formResults = {
+        attribute: this.state.single_search_attribute,
+        index: this.state.single_search_index
+      }
+      //POST req here
+      const requestOptions = {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({formResults})
+      };
+      fetch('/database/single-index-retrieval', requestOptions)
+      .then(res => res.json())      
+      .then(data => {
+        if (data.length === 0) {
+          console.log("No data is fetched by single retrieval function")
+        } else {
+          //load returned data into the buffer
+          for (var i = 0; i < data.length; i++) {
+            single_search_display_matrix[i] = data[i]
+          }
+          console.log("the single search returned data matrix is: ")
+          console.log(data)
+        }
+      });
       this.getFinalSingleSearchResult()
     }
   }
@@ -418,6 +462,7 @@ class Start extends Component {
       if (row_copy.length > 50) {
         this.fetchMoreRows(current_fetch_index);
         current_fetch_index = current_fetch_index + PREFETCH_SIZE;
+        console.log("see buffer data at this point")
       }
     
 
@@ -496,7 +541,14 @@ class Start extends Component {
       this.setState({
         load_from_buffer_to_matrix: true
       })
+
+      //double check if buffer has been loaded
+      if (buffer.length == 0) {
+        this.fetchMoreRows(PREFETCH_SIZE);
+      }
     } else {
+
+      //move data from buffer to matrix
       for (var i = 0; i < PREFETCH_SIZE; i++) {
         if (i < buffer.length) {
           let jsonObj = {}
@@ -524,9 +576,6 @@ class Start extends Component {
           }
           dataMatrix[i] = jsonObj
         }
-        // if (i == 49) {
-        //   break
-        // } 
       }
 
       //pre-fetch new data into the buffer
@@ -544,6 +593,29 @@ class Start extends Component {
         items: this.state.items.concat(Array.from({ length: 1 }))
       });
     }, 1500);
+  };
+
+  fetchMoreResult = () => {
+    if (this.state.resultItems.length >= Math.ceil(search_result_size / 10.0)) {
+      this.setState({ hasMoreResult: false });
+      return;
+    }
+
+    if (this.state.load_result_from_buffer_to_matrix == false) {
+      this.setState({
+        load_result_from_buffer_to_matrix: true
+      })
+    } else {
+      //...update the result display matrix and result buffer...
+    }
+
+    // a fake async api call like which sends
+    // 20 more records in .5 secs
+    setTimeout(() => {
+      this.setState({
+        resultItems: this.state.resultItems.concat(Array.from({ length: 1 }))
+      });
+    }, 500);
   };
 
   fetchMoreRows = (index) => {
@@ -610,12 +682,16 @@ class Start extends Component {
                   </Modal>
 
                   <Modal size='lg' isOpen={this.state.isSingelSearchModalOpen} toggle={this.toggleSingleSearchModal} >
-                    <ModalHeader toggle={this.toggleSingleSearchModal}>Please enter your search index. (First Attribute Value) </ModalHeader>
+                    <ModalHeader toggle={this.toggleSingleSearchModal}>Please enter your search index and search attribute </ModalHeader>
                     <ModalBody>
                       <Form onSubmit={this.onSingleSearchKeySubmit}>
                         <FormGroup>
                           <Label for="single_search_index">Single Search Index</Label>
                           <Input type="text" pattern="[0-9]*" name="single_search_index" id="single_search_index" onChange={e => this.handleSearchIndexChange(e)} />
+                        </FormGroup>
+                        <FormGroup>
+                          <Label for="single_search_attribute">Search Attribute Number (Enter "id" to search on id)</Label>
+                          <Input type="text" pattern="[0-9]*" name="single_search_attribute" id="single_search_attribute" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
                         <Button size='lg' color="primary" className='single_search_submit' type="submit" >Search</Button> {' '}
                       </Form>
@@ -665,6 +741,27 @@ class Start extends Component {
         </div>
         {searchResultTable}
         {/* {outputTable} */}
+        <hr />
+        <InfiniteScroll
+          dataLength={this.state.resultItems.length}
+          next={this.fetchMoreResult}
+          hasMore={this.state.hasMoreResult}
+          loader={<h4>Loading...</h4>}
+          endMessage={
+            <p style={{ textAlign: "center" }}>
+              <b>No Search Result Displayed</b>
+            </p>
+          }
+          >
+          {this.state.resultItems.map((i, index) => (
+            <div style={search_display_style} key={index}>
+              div - #{index}
+            </div>
+          ))}
+        </InfiniteScroll>
+
+        <hr />
+        Below Is The Entire Data Set
         <InfiniteScroll
           dataLength={this.state.items.length}
           next={this.fetchMoreData}

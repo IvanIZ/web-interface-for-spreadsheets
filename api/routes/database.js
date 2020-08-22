@@ -43,8 +43,8 @@ router.get('/create-table/:num_attr', (req, res) => {
         }
       console.log('New Table Created!')
     })
-
-    return res.json(results)
+    res.end()
+    //return res.json(results)
 })
 
 
@@ -63,7 +63,8 @@ router.get('/delete-table', (req, res) => {
       }
     console.log('Table deleted!')
   })
-  return res.json(results)
+  res.end()
+  //return res.json(results)
 })
 
 
@@ -93,13 +94,14 @@ router.post('/insert-content', (req, res) => {
         return
     }
   })
-  return res.json(results)
+  res.end()
+  //return res.json(results)
 })
 
 
 //get the next 50 rows from database with id greater than start_id
 router.get('/fetch-fifty-rows/:start_id', (req, res) => {
-  console.log("Fetching 50 more rows with starting id: " + req.params.start_id)
+  console.log("trying to fetch rows based on entered index and attribute")
 
   const connection = getConnection();
 
@@ -123,5 +125,35 @@ router.get('/fetch-fifty-rows/:start_id', (req, res) => {
 
   //res.end()
 });
+
+
+//function that retrieves rows with a single key on customized attribute
+router.post('/single-index-retrieval', (req, res) => {
+  console.log("Fetching 50 more rows with starting id: " + req.params.start_id)
+
+  const connection = getConnection();
+
+  let attribute = "attribute" + req.body.formResults.attribute
+  let index = req.body.formResults.index
+
+  //exclude the start, include the end
+  let queryString = "SELECT * FROM excel WHERE " + attribute +  " = " + index
+  console.log("the query string to do single index fetch is: "  + queryString)
+  connection.query(queryString, (err, rows, fields) => {
+    if (err) {
+      console.log("Failed to fetch single index retrieval rows: " + err);
+      res.sendStatus(500);
+      return;
+    }
+
+    console.log("I think we fetched single index retrieval rows seccessfully")
+    //console.log(rows)
+    res.json(rows)
+  })
+
+  //res.end()
+});
+
+
 
 module.exports = router;
