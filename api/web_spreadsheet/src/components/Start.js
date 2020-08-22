@@ -351,21 +351,33 @@ class Start extends Component {
 
 
       //initial data matrix (with id as the first column)
-      for (var i = 0; i < row_copy.length; i++) {
-        let jsonObj = {}
-        for (var j = 0; j <= col_copy.length; j++) {
-          if (j == 0) {
-            let item = {text: (i + 1)}
-            jsonObj['id'] = item
-          } else {
-            let item = {text: row_copy[i][j - 1]}
-            jsonObj['attr' + j] = item
+      for (var i = 0; i < PREFETCH_SIZE; i++) {
+        if (i < row_copy.length) {
+          let jsonObj = {}
+          for (var j = 0; j <= col_copy.length; j++) {
+            if (j == 0) {
+              let item = {text: (i + 1)}
+              jsonObj['id'] = item
+            } else {
+              let item = {text: row_copy[i][j - 1]}
+              jsonObj['attr' + j] = item
+            }
           }
+          dataMatrix[i] = jsonObj
+        } else {
+          let jsonObj = {}
+          for (var j = 0; j <= col_copy.length; j++) {
+            if (j == 0) {
+              let item = {text: ''}
+              jsonObj['id'] = item
+            } else {
+              let item = {text: ''}
+              jsonObj['attr' + j] = item
+            }
+          }
+          dataMatrix[i] = jsonObj
         }
-        dataMatrix[i] = jsonObj
-        if (i == 49) {
-          break
-        } 
+
       }
       console.log("the data matrix in json format is: ")
       console.log(dataMatrix)
@@ -483,21 +495,36 @@ class Start extends Component {
         load_from_buffer_to_matrix: true
       })
     } else {
-      for (var i = 0; i < buffer.length; i++) {
-        let jsonObj = {}
-        for (var j = 0; j <= num_attr; j++) {
-          if (j == 0) {
-            let item = {text: buffer[i].id}
-            jsonObj['id'] = item
-          } else {
-            let item = {text: buffer[i]["attribute" + j]}
-            jsonObj['attr' + j] = item
+      for (var i = 0; i < PREFETCH_SIZE; i++) {
+        if (i < buffer.length) {
+          let jsonObj = {}
+          for (var j = 0; j <= num_attr; j++) {
+            if (j == 0) {
+              let item = {text: buffer[i].id}
+              jsonObj['id'] = item
+            } else {
+              let item = {text: buffer[i]["attribute" + j]}
+              jsonObj['attr' + j] = item
+            }
           }
+          dataMatrix[i] = jsonObj
+        } else {
+          console.log("i is greater than " + PREFETCH_SIZE + " now")
+          let jsonObj = {}
+          for (var j = 0; j <= num_attr; j++) {
+            if (j == 0) {
+              let item = {text: ''}
+              jsonObj['id'] = item
+            } else {
+              let item = {text: ''}
+              jsonObj['attr' + j] = item
+            }
+          }
+          dataMatrix[i] = jsonObj
         }
-        dataMatrix[i] = jsonObj
-        if (i == 49) {
-          break
-        } 
+        // if (i == 49) {
+        //   break
+        // } 
       }
 
       //pre-fetch new data into the buffer
