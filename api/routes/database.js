@@ -133,7 +133,11 @@ router.post('/single-index-retrieval', (req, res) => {
 
   const connection = getConnection();
 
+  let onID = req.body.formResults.onID
   let attribute = "attribute" + req.body.formResults.attribute
+  if (onID === true) {
+    attribute = 'id'
+  }
   let index = req.body.formResults.index
 
   //exclude the start, include the end
@@ -265,6 +269,10 @@ router.post('/range-index-retrieval', (req, res) => {
   const connection = getConnection();
 
   let attribute = "attribute" + req.body.formResults.attribute
+  let onID = req.body.formResults.onID
+  if (onID === true) {
+    attribute = 'id'
+  }
   let lower_index = req.body.formResults.lower_index
   let upper_index = req.body.formResults.upper_index
 

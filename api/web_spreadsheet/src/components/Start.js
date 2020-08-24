@@ -231,15 +231,20 @@ class Start extends Component {
   onSingleSearchKeySubmit = async (e) => {
     e.preventDefault();
     // this.props.history.push('/result')
-    if (this.state.single_search_index == '' || this.state.single_search_attribute == '') {
+    if (this.state.single_search_index == '') {
       this.toggleErrorModal()
     } else {
       this.toggleSingleSearchModal()  //close up the search modal
 
       //fetch the result from the db
+      let onID = false
+      if (this.state.single_search_attribute === '') {
+        onID = true
+      }
       let formResults = {
         attribute: this.state.single_search_attribute,
-        index: this.state.single_search_index
+        index: this.state.single_search_index,
+        onID: onID
       }
       //POST req here
       const requestOptions = {
@@ -362,7 +367,7 @@ class Start extends Component {
 
   onRangeSearchIndexSubmit = (e) => {
     e.preventDefault();
-    if ((this.state.range_search_lower_index == '' && this.state.range_search_upper_index == '') || this.state.range_search_attribute == '') {
+    if (this.state.range_search_lower_index == '' && this.state.range_search_upper_index == '') {
       this.toggleErrorModal()
     } else {
       this.toggleRangeSearchModal() // close range search modal
@@ -380,11 +385,17 @@ class Start extends Component {
         upperBound = Number(this.state.range_search_upper_index)
       }
 
+      let onID = false;
+      if (this.state.range_search_attribute === '') {
+        onID = true;
+      }
+
       //fetch the result from the db
       let formResults = {
         attribute: this.state.range_search_attribute,
         lower_index: lowerBound,
-        upper_index: upperBound
+        upper_index: upperBound, 
+        onID: onID
       }
       //POST req here
       const requestOptions = {
@@ -599,28 +610,6 @@ class Start extends Component {
 
 
       if (tree.depth(true) == 0) {
-        outputTable =  <InfiniteScroll
-                            dataLength={this.state.items.length}
-                            next={this.fetchMoreData}
-                            hasMore={this.state.hasMore}
-                            loader={<h4>Loading...</h4>}
-                            endMessage={
-                              <p style={{ textAlign: "center" }}>
-                                <b>Yay! You have seen it all</b>
-                              </p>
-                            }
-                            >
-                            {this.state.items.map((i, index) => (
-                              <div style={style} key={index}>
-                                <ReactCanvasGrid
-                                                    cssHeight={'2499px'}
-                                                    columns={columns}
-                                                    data={dataMatrix}
-                                                    rowHeight={49}
-                                      />
-                              </div>
-                            ))}
-                          </InfiniteScroll>
         range_search_button = <Button size='lg' className='range-search-button' color="primary" onClick={this.toggleRangeSearchModal} >Range Index Retrieval</Button> 
         single_search_button = <Button size='lg' className='single-search-button' color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Index Retrieval</Button>
         single_remove_button = <Button color="primary" onClick={this.toggleSingleRemoveModal} >Single Index Removal</Button> 
@@ -848,9 +837,7 @@ class Start extends Component {
                   &nbsp;&nbsp;&nbsp;&nbsp;
                   {single_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
-                  <Button color="primary" onClick={this.fetchMoreRows} >fetch test</Button>
-                  &nbsp;&nbsp;&nbsp;&nbsp;
-                  <Button color="primary" onClick={this.deleteDBTable} >delete table</Button>
+                  <Button color="primary" onClick={this.deleteDBTable} >Delete Table</Button>
                   
 
                   <Modal isOpen={this.state.isUploadAckModalOpen} toggle={this.toggleUploadAckModal} >
@@ -876,7 +863,7 @@ class Start extends Component {
                           <Input type="text" pattern="[0-9]*" name="single_search_index" id="single_search_index" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
                         <FormGroup>
-                          <Label for="single_search_attribute">Search Attribute Number (Enter "id" to search on id)</Label>
+                          <Label for="single_search_attribute">Search Attribute Number (Leave blank to search on id)</Label>
                           <Input type="text" pattern="[0-9]*" name="single_search_attribute" id="single_search_attribute" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
                         <Button size='lg' color="primary" className='single_search_submit' type="submit" >Search</Button> {' '}
@@ -897,7 +884,7 @@ class Start extends Component {
                           <Input type="text" pattern="[0-9]*" name="range_search_upper_index" id="range_search_upper_index" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
                         <FormGroup>
-                          <Label for="range_search_attribute">Attribute Number</Label>
+                          <Label for="range_search_attribute">Attribute Number (Leave blank to search on id)</Label>
                           <Input type="text" pattern="[0-9]*" name="range_search_attribute" id="range_search_attribute" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
                         <Button color="primary" className='range_search_submit' type="submit" block>Search</Button> {' '}
