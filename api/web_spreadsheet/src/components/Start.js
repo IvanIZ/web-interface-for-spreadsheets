@@ -31,7 +31,9 @@ let PREFETCH_SIZE = 50
 //search result variables
 let SEARCH_RESULT_PREFETCH_SIZE = 10;
 let search_result_size = 0;
-let first_time_single_search = true;
+let first_time_search = true;
+let current_result_fetch_index = 10;
+let resultBuffer = []
 
 let current_fetch_index = 50 //initial pre-prefetch index
 let num_attr = 0;
@@ -69,6 +71,7 @@ class Start extends Component {
 
       single_search_index: '', 
       single_search_attribute: '',
+      range_search_attribute:'',
 
       isSingleSearch: false,
 
@@ -190,11 +193,7 @@ class Start extends Component {
     })
   }
 
-  getFinalSingleSearchResult = () => {
-    let resultMatrix = []
-    for (var i = 0; i < single_search_returned_key.length; i++) {
-      resultMatrix[i] = data[single_search_returned_key[i]]
-    }
+  getFinalSingleSearchResult = (resultMatrix) => {
     
     console.log("final single search result is ", resultMatrix)
     if (resultMatrix.length == 0) {
@@ -216,36 +215,6 @@ class Start extends Component {
     this.toggleResultPanelModal()
   }
 
-  getFinalRangeSearchResult = () => {
-    let resultMatrix = []
-    for (var i = 0; i < range_search_returned_key.length; i++) {
-      resultMatrix[i] = data[range_search_returned_key[i]]
-    }
-    console.log("final range search result ", resultMatrix)
-    if (resultMatrix.length == 0) {
-      searchResultTable = <Jumbotron>
-                              <div>
-                                  No Entries Are Retrieved
-                              </div>
-                          </Jumbotron>
-    } else {
-      searchResultTable = <Jumbotron>
-                            <div>
-                                Below Is The Retrieved Data
-                            </div>
-                             <div>
-                                <Spreadsheet data={resultMatrix} />
-                             </div>
-                        </Jumbotron>
-    }
-    //clear current index values
-    this.setState({
-      range_search_lower_index: '',
-      range_search_upper_index: ''
-    })
-    this.toggleResultPanelModal()
-  }
-
   toggleResultPanelModal = () => {
     this.setState({
       isResultPanelModalOpen: !this.state.isResultPanelModalOpen
@@ -260,6 +229,7 @@ class Start extends Component {
 
   onSingleSearchKeySubmit = async (e) => {
     e.preventDefault();
+    // this.props.history.push('/result')
     if (this.state.single_search_index == '' || this.state.single_search_attribute == '') {
       this.toggleErrorModal()
     } else {
@@ -281,24 +251,120 @@ class Start extends Component {
       .then(data => {
         if (data.length === 0) {
           console.log("No data is fetched by single retrieval function")
+          let resultMatrix = []
+          this.getFinalSingleSearchResult(resultMatrix)
         } else {
-          //load returned data into the buffer
+
+          //fill in result matrix
+          let resultMatrix = []
+          searchResultTable = ''
           for (var i = 0; i < data.length; i++) {
-            single_search_display_matrix[i] = data[i]
+            let temp = []
+            for (var j = 1; j < num_attr; j++) {
+              temp[j - 1] = { value: data[i]["attribute" + j]}
+            }
+            resultMatrix[i] = temp
           }
-          console.log("the single search returned data matrix is: ")
-          console.log(data)
+          this.getFinalSingleSearchResult(resultMatrix)
+
+          //delete previous result table, if needed
+          // if (first_time_search) {
+          //   first_time_search = false
+          // } else {
+          //   this.deleteResultTable()
+          // }
+
+          //load returned data into the display matrix
+          // for (var i = 0; i < SEARCH_RESULT_PREFETCH_SIZE; i++) {
+          //   if (i < data.length) {
+          //     let jsonObj = {}
+          //     for (var j = 0; j <= num_attr; j++) {
+          //       if (j == 0) {
+          //         let item = {text: (i + 1)}
+          //         jsonObj['id'] = item
+          //       } else {
+          //         let item = {text: data[i][j - 1]}
+          //         jsonObj['attr' + j] = item
+          //       }
+          //     }
+          //     single_search_display_matrix[i] = jsonObj
+          //   } else {
+          //     let jsonObj = {}
+          //     for (var j = 0; j <= num_attr; j++) {
+          //       if (j == 0) {
+          //         let item = {text: ''}
+          //         jsonObj['id'] = item
+          //       } else {
+          //         let item = {text: ''}
+          //         jsonObj['attr' + j] = item
+          //       }
+          //     }
+          //     single_search_display_matrix[i] = jsonObj
+          //   }
+          // }
+
+          //create new result table
+          // console.log("going to create a result table")
+          // let url = "/database/create-result-table/" + Number(num_attr)
+          // fetch(url)
+
+          //enable scrolling
+          // this.setState({
+          //   hasMoreResult: true, 
+          //   resultItems: Array.from({ length: 0 })
+          // })
+          // this.insertSearchTable(data)
         }
       });
-      this.getFinalSingleSearchResult()
     }
+  }
+
+  insertSearchTable = async (data) => {
+    //insert content into result table
+    console.log("the single search returned data matrix is: ")
+    console.log(data)
+    let resultBufferMatrix = []
+    for (var i = 0; i < data.length; i++) {
+      let temp = []
+      for (var j = 1; j <= num_attr; j++) {
+        temp[j - 1] = data[i]["attribute" + j]
+      }
+      resultBufferMatrix[i] = temp
+    }
+    console.log("the buffer matrix is: ")
+    console.log(resultBufferMatrix)
+    let formResults_result_buffer = {
+      matrix: resultBufferMatrix,
+      num_attr: num_attr
+    }
+    //POST req here
+    const requestOptions_result = {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({formResults_result_buffer})
+    };
+    await fetch('/database/insert-result-content', requestOptions_result)
+
+    //load future data into result buffer, and increment the fetch index
+    if (data.length > 10) {
+      this.loadResultBuffer(current_result_fetch_index);
+      current_result_fetch_index = current_result_fetch_index + PREFETCH_SIZE
+    }
+
+    //enable scrolling
+    this.setState({
+      hasMoreResult: true, 
+      resultItems: Array.from({ length: 0 })
+    })
+    this.getFinalSingleSearchResult()
   }
 
   onRangeSearchIndexSubmit = (e) => {
     e.preventDefault();
-    if (this.state.range_search_lower_index == '' && this.state.range_search_upper_index == '') {
+    if ((this.state.range_search_lower_index == '' && this.state.range_search_upper_index == '') || this.state.range_search_attribute == '') {
       this.toggleErrorModal()
     } else {
+      this.toggleRangeSearchModal() // close range search modal
       let lowerBound, upperBound
       //Restore default min/max bound if null entered
       if (this.state.range_search_lower_index == '') {
@@ -308,18 +374,46 @@ class Start extends Component {
       }
 
       if (this.state.range_search_upper_index == '') {
-        console.log("Invalid upper")
         upperBound = Number.MAX_VALUE
       } else {
         upperBound = Number(this.state.range_search_upper_index)
       }
 
-      range_search_returned_key = tree.fetchRange(lowerBound, upperBound, false)
-      console.log("user entered lower index is: " + lowerBound)
-      console.log("user entered upper index is: " + upperBound)
-      console.log("user entered range search result keys are: ", range_search_returned_key)
-      this.toggleRangeSearchModal()
-      this.getFinalRangeSearchResult()
+      //fetch the result from the db
+      let formResults = {
+        attribute: this.state.range_search_attribute,
+        lower_index: lowerBound,
+        upper_index: upperBound
+      }
+      //POST req here
+      const requestOptions = {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({formResults})
+      };
+      fetch('/database/range-index-retrieval', requestOptions)
+      .then(res => res.json())      
+      .then(data => {
+        if (data.length === 0) {
+          console.log("No data is fetched by range retrieval function")
+          let resultMatrix = []
+          this.getFinalSingleSearchResult(resultMatrix)
+        } else {
+
+          //fill in result matrix
+          let resultMatrix = []
+          searchResultTable = ''
+          for (var i = 0; i < data.length; i++) {
+            let temp = []
+            for (var j = 1; j < num_attr; j++) {
+              temp[j - 1] = { value: data[i]["attribute" + j]}
+            }
+            resultMatrix[i] = temp
+          }
+          this.getFinalSingleSearchResult(resultMatrix)
+        }
+      
+      });
     }
   }
 
@@ -468,14 +562,6 @@ class Start extends Component {
 
 
       if (tree.depth(true) == 0) {
-        // outputTable = <Jumbotron >
-        //                   <div className='data-below-text'>
-        //                       Below Is The Entire Data Set
-        //                   </div>
-        //                   <div>
-        //                       <Spreadsheet data={data} />
-        //                   </div>
-        //               </Jumbotron>
         outputTable =  <InfiniteScroll
                             dataLength={this.state.items.length}
                             next={this.fetchMoreData}
@@ -527,6 +613,11 @@ class Start extends Component {
   deleteDBTable = (e) => {
     console.log("going to test delete table")
     fetch("/database/delete-table")
+  }
+
+  deleteResultTable = () => {
+    console.log("going to delete result table")
+    fetch("/database/delete-result-table")
   }
 
   fetchMoreData = () => {
@@ -607,6 +698,42 @@ class Start extends Component {
       })
     } else {
       //...update the result display matrix and result buffer...
+
+      //move data from search result buffer to result display matrix
+      for (var i = 0; i < SEARCH_RESULT_PREFETCH_SIZE; i++) {
+        if (i < resultBuffer.length) {
+          let jsonObj = {}
+          for (var j = 0; j <= num_attr; j++) {
+            if (j == 0) {
+              let item = {text: resultBuffer[i].id}
+              jsonObj['id'] = item
+            } else {
+              let item = {text: resultBuffer[i]["attribute" + j]}
+              jsonObj['attr' + j] = item
+            }
+          }
+          single_search_display_matrix[i] = jsonObj
+        } else {
+          let jsonObj = {}
+          for (var j = 0; j <= num_attr; j++) {
+            if (j == 0) {
+              let item = {text: ''}
+              jsonObj['id'] = item
+            } else {
+              let item = {text: ''}
+              jsonObj['attr' + j] = item
+            }
+          }
+          single_search_display_matrix[i] = jsonObj
+        }
+      }
+
+      //update search result buffer
+      this.loadResultBuffer(current_result_fetch_index)
+      current_result_fetch_index = current_result_fetch_index + SEARCH_RESULT_PREFETCH_SIZE
+
+      console.log("the new search result display matrix is: ")
+      console.log(single_search_display_matrix)
     }
 
     // a fake async api call like which sends
@@ -617,6 +744,26 @@ class Start extends Component {
       });
     }, 500);
   };
+
+  loadResultBuffer = (index) => {
+    console.log("CALLED LOADRESULTBUFFER!")
+    resultBuffer = []
+    let url = '/database/fetch-ten-rows/' + index
+      fetch(url)
+      .then(res => res.json())      
+      .then(data => {
+        if (data.length === 0) {
+          console.log("No data is fetched by fetchMoreResult function")
+        } else {
+          //load returned data into the buffer
+          for (var i = 0; i < data.length; i++) {
+            resultBuffer[i] = data[i]
+          }
+          console.log("the result buffer is: ")
+          console.log(resultBuffer)
+        }
+      });
+  }
 
   fetchMoreRows = (index) => {
     buffer = []
@@ -710,6 +857,10 @@ class Start extends Component {
                           <Label for="range_search_upper_index">Upper Bound</Label>
                           <Input type="text" pattern="[0-9]*" name="range_search_upper_index" id="range_search_upper_index" onChange={e => this.handleSearchIndexChange(e)} />
                         </FormGroup>
+                        <FormGroup>
+                          <Label for="range_search_attribute">Attribute Number</Label>
+                          <Input type="text" pattern="[0-9]*" name="range_search_attribute" id="range_search_attribute" onChange={e => this.handleSearchIndexChange(e)} />
+                        </FormGroup>
                         <Button color="primary" className='range_search_submit' type="submit" block>Search</Button> {' '}
                       </Form>
                     </ModalBody>
@@ -741,8 +892,8 @@ class Start extends Component {
         </div>
         {searchResultTable}
         {/* {outputTable} */}
-        <hr />
-        <InfiniteScroll
+        {/* <hr /> */}
+        {/* <InfiniteScroll
           dataLength={this.state.resultItems.length}
           next={this.fetchMoreResult}
           hasMore={this.state.hasMoreResult}
@@ -755,10 +906,15 @@ class Start extends Component {
           >
           {this.state.resultItems.map((i, index) => (
             <div style={search_display_style} key={index}>
-              div - #{index}
+              <ReactCanvasGrid
+                                  cssHeight={'499px'}
+                                  columns={columns}
+                                  data={single_search_display_matrix}
+                                  rowHeight={49}
+                    />
             </div>
           ))}
-        </InfiniteScroll>
+        </InfiniteScroll> */}
 
         <hr />
         Below Is The Entire Data Set

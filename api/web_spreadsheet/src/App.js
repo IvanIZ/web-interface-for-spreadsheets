@@ -24,6 +24,7 @@ import 'react-datasheet/lib/react-datasheet.css';
 
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import Start from './components/Start';
+// import Result from './components/Result';
 
 const BPlusTree = require('bplustree');
 
@@ -131,35 +132,13 @@ class App extends Component {
 
     return (
       <div className="App">
-          {/* <Jumbotron >
-              <Container>
-                  <header className="App-header">
-                    <img src={logo} className="App-logo" alt="logo" />
-                    <p>
-                      Welcome to spreadsheet web. Upload file below......
-                    </p>
-                    <input type="file" onChange={this.fileHandler.bind(this)} style={{"padding":"10px"}} />
-                    <p >
-                      <Button size="lg" style={{fontSize: 36, fontWeight: 'bold'}} onClick={this.onRetrieveSelectionClick} block>Retrieve Data</Button>
-                    </p>
-                    <Modal isOpen={this.state.isSearchSelectionModalOpen} toggle={this.toggleSearchSelectionModal} >
-                      <ModalHeader toggle={this.toggleSearchSelectionModal}>Select Data Retrieval Option</ModalHeader>
-                      <ModalBody>
-                          <Button color="primary" onClick={this.toggleRangeSearchModal} type="submit">Range Retrieval</Button> {' '}
-                          <Button color="primary" onClick={this.toggleSingleSearchModal} type="submit">Single Row Retrieval</Button> {' '}
-                      </ModalBody>
-                    </Modal>
-                  </header>  
-                  
-                  {outputTable}
-              </Container>
-          </Jumbotron> */}
 
            <BrowserRouter>
                 <div>
                   {/* <Navbar /> */}
                   <Switch>
                     <Route path="/" component={Start} exact/>
+                    {/* <Route path="/result" component={Result}/> */}
                   </Switch>
                 </div> 
             </BrowserRouter>
