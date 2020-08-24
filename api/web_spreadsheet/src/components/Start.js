@@ -27,6 +27,7 @@ let data = [], dataMatrix = [], columns = [], buffer = [], single_search_display
 let first_time_upload = true
 let DIV_WIDTH = 1260
 let PREFETCH_SIZE = 50
+let noData = true
 
 //search result variables
 let SEARCH_RESULT_PREFETCH_SIZE = 10;
@@ -35,7 +36,7 @@ let first_time_search = true;
 let current_result_fetch_index = 10;
 let resultBuffer = []
 
-let current_fetch_index = 50 //initial pre-prefetch index
+let current_fetch_index = 49 //initial pre-prefetch index
 let num_attr = 0;
 const style = {
   height: 2500,
@@ -428,16 +429,17 @@ class Start extends Component {
     this.toggleRemoveAckModal()
   }
 
-  fileHandler = (event) => {
+  fileHandler = async (event) => {
     let fileObj = event.target.files[0];
     console.log("file change!")
     console.log("first time upload is: "  + first_time_upload)
+    console.log(fileObj)
     this.setState({
       hasMore: true, 
       load_from_buffer_to_matrix: false, //set load to false s.t. the first display does not come from buffer
       items: Array.from({ length: 0 })
     })
-    current_fetch_index = 50;  //reset the pre-fetch index to initial value
+    current_fetch_index = 49;  //reset the pre-fetch index to initial value
     outputTable = ''
 
     // delete previous table, except for first time upload
@@ -450,7 +452,7 @@ class Start extends Component {
     tree = new BPlusTree()
   
     //just pass the fileObj as parameter
-    ExcelRenderer(fileObj, (err, resp) => {
+    await ExcelRenderer(fileObj, (err, resp) => {
       if(err){
         console.log(err);            
       }
@@ -461,6 +463,13 @@ class Start extends Component {
         });
       }
     });  
+
+    //pause until data is loaded from the imported file
+    while (true) {
+      if (this.state.rows.length !== 0) {
+        break;
+      }
+    }
     this.toggleUploadAckModal() 
   }
 
@@ -492,14 +501,26 @@ class Start extends Component {
 
       //initial data matrix (with id as the first column)
       for (var i = 0; i < PREFETCH_SIZE; i++) {
-        if (i < row_copy.length) {
+        if (i == 0) {
           let jsonObj = {}
           for (var j = 0; j <= col_copy.length; j++) {
             if (j == 0) {
-              let item = {text: (i + 1)}
+              let item = {text: 'id'}
               jsonObj['id'] = item
             } else {
-              let item = {text: row_copy[i][j - 1]}
+              let item = {text: "Attribute" + j}
+              jsonObj['attr' + j] = item
+            }
+          }
+          dataMatrix[i] = jsonObj
+        } else if (i < row_copy.length) {
+          let jsonObj = {}
+          for (var j = 0; j <= col_copy.length; j++) {
+            if (j == 0) {
+              let item = {text: i}
+              jsonObj['id'] = item
+            } else {
+              let item = {text: row_copy[i - 1][j - 1]}
               jsonObj['attr' + j] = item
             }
           }
@@ -554,7 +575,23 @@ class Start extends Component {
 
       //fetch future rows into the buffer, if possible. Also increment the index
       if (row_copy.length > 50) {
-        this.fetchMoreRows(current_fetch_index);
+        //this.fetchMoreRows(current_fetch_index);
+        for (var i = current_fetch_index; i < row_copy.length; i++) {
+          if (i === current_fetch_index + PREFETCH_SIZE) {
+            break;
+          }
+          let jsonObj = {}
+          for (var j = 0; j <= col_copy.length; j++) {
+            if (j == 0) {
+              //let item = {text: i}
+              jsonObj['id'] = i + 1
+            } else {
+              //let item = {text: row_copy[i - 1][j - 1]}
+              jsonObj['attribute' + j] = row_copy[i - 1][j - 1]
+            }
+          }
+          buffer[i - current_fetch_index] = jsonObj
+        }
         current_fetch_index = current_fetch_index + PREFETCH_SIZE;
         console.log("see buffer data at this point")
       }
@@ -773,7 +810,9 @@ class Start extends Component {
       .then(data => {
         if (data.length === 0) {
           console.log("No data is fetched by fetchMoreRows function")
+          noData = true
         } else {
+          noData = false;
           //load returned data into the buffer
           for (var i = 0; i < data.length; i++) {
             buffer[i] = data[i]
