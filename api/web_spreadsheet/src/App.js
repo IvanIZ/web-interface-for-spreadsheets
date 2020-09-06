@@ -24,7 +24,7 @@ import 'react-datasheet/lib/react-datasheet.css';
 
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import Start from './components/Start';
-// import Result from './components/Result';
+import Result from './components/Result';
 
 const BPlusTree = require('bplustree');
 
@@ -91,44 +91,7 @@ class App extends Component {
   
   }
 
-  render() {
-    let outputTable;
-    let output;
-    let row_copy = this.state.rows
-    let col_copy = this.state.cols
-    let attri_cell_arr = [{name: "#", key: 0}]
-    if (row_copy.length != 0 || col_copy.length != 0) {
-      console.log("not null")
-      console.log(row_copy)
-      console.log(col_copy)
-
-      //fill in attribute cell array
-      for (var i = 0; i < col_copy.length; i++) {
-        col_copy[i] = {name: col_copy[i].name, key: col_copy[i].key + 1 }
-        attri_cell_arr[i + 1] = col_copy[i]
-      }
-      console.log(attri_cell_arr)
-
-      if (tree.depth(true) == 0) {
-        for (var i = 0; i < row_copy.length; i++) {
-          tree.store(row_copy[i][0], i)
-        }
-      }
-      
-      //single fetch example
-      let example_fetch = tree.fetch(34)
-      console.log("The fetched value should be 11. Actual value is: " + example_fetch)
-
-      //range fetch example
-      let example_range_fetch = tree.fetchRange(40, 67)
-      console.log("The range-fetched value is:  ", example_range_fetch)
-
-      outputTable = <OutTable data={this.state.rows} columns={attri_cell_arr} tableClassName="ExcelTable2007" tableHeaderRowClass="heading" />
-
-    } else {
-      console.log("null")
-      outputTable = "Not uploaded yet"
-    }
+  render() { 
 
     return (
       <div className="App">
@@ -138,7 +101,7 @@ class App extends Component {
                   {/* <Navbar /> */}
                   <Switch>
                     <Route path="/" component={Start} exact/>
-                    {/* <Route path="/result" component={Result}/> */}
+                    <Route path="/result" component={Result}/>
                   </Switch>
                 </div> 
             </BrowserRouter>
