@@ -1,5 +1,8 @@
 import React, { Component, useState } from 'react';
 import ReactDOM from "react-dom"
+import { HotTable } from '@handsontable/react';
+import Handsontable from 'handsontable';
+import 'handsontable/dist/handsontable.full.css';
 import logo from '../logo.svg';
 import '../App.css';
 import {ExcelRenderer, OutTable} from 'react-excel-renderer';
@@ -31,10 +34,10 @@ let single_search_returned_key = [], remove_returned_key = [], range_remove_retu
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
 
 let data = [], dataMatrix = [], columns = [], buffer = [], single_search_display_matrix = []
-let first_time_upload = true
 let DIV_WIDTH = 1260
 let PREFETCH_SIZE = 50
 let noData = true
+let ATT_NUM = 12
 
 //search result variables
 let SEARCH_RESULT_PREFETCH_SIZE = 10;
@@ -65,7 +68,6 @@ class Start extends Component {
   constructor() {
     super();
     this.state = {
-      // first_time_upload: true,
       rows: [],
       cols: [],
       attri: [],
@@ -105,7 +107,9 @@ class Start extends Component {
       load_result_from_buffer_to_matrix: false, 
 
       redirect_import_page: false, 
-      import_page_link: '/result'
+      import_page_link: '/result', 
+
+      data: []
     }
 
     this.toggleSearchSelectionModal = this.toggleSearchSelectionModal.bind()
@@ -118,6 +122,34 @@ class Start extends Component {
     this.toggleRangeRemoveModal = this.toggleRangeRemoveModal.bind()
     this.toggleRemoveAckModal = this.toggleRemoveAckModal.bind()
   }
+
+  // fetch 50 rows of data into the buffer
+  async componentDidMount() {
+
+    buffer = []
+    let url = '/database/fetch-fifty-rows/' + 0
+      fetch(url)
+      .then(res => res.json())      
+      .then(data => {
+        if (data.length === 0) {
+          console.log("No data is fetched by fetchMoreRows function")
+          noData = true
+        } else {
+          noData = false;
+          //load returned data into the buffer
+          for (var i = 0; i < data.length; i++) {
+            var temp = []
+            for (var j = 1; j < ATT_NUM; j++) {
+              temp[j - 1] = data[i]['attribute' + j]
+            }
+            buffer[i] = temp;
+          }
+          console.log("the buffer is: ")
+          console.log(buffer)
+        }
+      });
+  }
+
 
   toggleRemoveAckModal = () => {
     this.setState({
@@ -482,6 +514,13 @@ class Start extends Component {
       });
   }
 
+  // PROTOTYPE FOR HOW TO DYNAMICALLY PRE-FETCH DATA !!!!!!!!!!!!!!!!!!
+  display = () => {
+    this.setState({
+      data: this.state.data.concat(buffer)
+    })
+  }
+
   redirect_import = () => {
     this.setState( {
       redirect_import_page: true
@@ -494,6 +533,8 @@ class Start extends Component {
     }
     return (
       <div className="App">
+        <script src="node_modules/handsontable/dist/handsontable.full.min.js"></script>
+        <link href="node_modules/handsontable/dist/handsontable.full.min.css" rel="stylesheet" media="screen"></link>
          <Jumbotron className='logo-jumbo'>
           </Jumbotron >
           <div>
@@ -505,6 +546,8 @@ class Start extends Component {
                   <p>Choose display data, or retrieve data from below</p>
                   <p className="lead">
                     <Button size='lg' className='redirect-button' color="primary" onClick={this.redirect_import} >To Import Page</Button> 
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <Button size='lg' className='display-button' color="primary" onClick={this.display} >Display Dataset</Button> 
                   </p>
                   {range_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
@@ -516,29 +559,15 @@ class Start extends Component {
         {searchResultTable}
 
         <hr />
-        Below Is The Entire Data Set
-        <InfiniteScroll
-          dataLength={this.state.items.length}
-          next={this.fetchMoreData}
-          hasMore={this.state.hasMore}
-          loader={<h4>Loading...</h4>}
-          endMessage={
-            <p style={{ textAlign: "center" }}>
-              <b>Yay! You have seen it all</b>
-            </p>
-          }
-          >
-          {this.state.items.map((i, index) => (
-            <div style={style} key={index}>
-              <ReactCanvasGrid
-                                  cssHeight={'2499px'}
-                                  columns={columns}
-                                  data={dataMatrix}
-                                  rowHeight={49}
-                    />
-            </div>
-          ))}
-        </InfiniteScroll>
+        Below Is The Entire Data Set  
+          <HotTable data={this.state.data} 
+          colHeaders={true} 
+          rowHeaders={true} 
+          width="100%" 
+          height="300"
+          colWidths="100%"
+          formulas={true} />
+        {/* <div id="example"></div> */}
       </div>
 
     );
