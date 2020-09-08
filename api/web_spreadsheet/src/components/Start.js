@@ -45,7 +45,7 @@ let search_result_size = 0;
 let current_result_fetch_index = 10;
 let resultBuffer = []
 
-let current_fetch_index = 49 //initial pre-prefetch index
+let current_fetch_index = 51 //initial pre-prefetch index
 let num_attr = 0;
 const style = {
   height: 2500,
@@ -127,7 +127,7 @@ class Start extends Component {
   async componentDidMount() {
 
     buffer = []
-    let url = '/database/fetch-fifty-rows/' + 0
+    let url = '/database/fetch-fifty-rows/' + 1
       fetch(url)
       .then(res => res.json())      
       .then(data => {
@@ -237,7 +237,6 @@ class Start extends Component {
 
   onSingleSearchKeySubmit = async (e) => {
     e.preventDefault();
-    // this.props.history.push('/result')
     if (this.state.single_search_index == '') {
       this.toggleErrorModal()
     } else {
@@ -506,7 +505,11 @@ class Start extends Component {
           noData = false;
           //load returned data into the buffer
           for (var i = 0; i < data.length; i++) {
-            buffer[i] = data[i]
+            var temp = []
+            for (var j = 1; j < ATT_NUM; j++) {
+              temp[j - 1] = data[i]['attribute' + j]
+            }
+            buffer[i] = temp;
           }
           console.log("the buffer is: ")
           console.log(buffer)
@@ -519,12 +522,22 @@ class Start extends Component {
     this.setState({
       data: this.state.data.concat(buffer)
     })
+    this.fetchMoreRows(current_fetch_index)
+    current_fetch_index += 50
   }
 
   redirect_import = () => {
     this.setState( {
       redirect_import_page: true
     })
+  }
+
+  handleScroll = (e) => {
+    const bottom = e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+    if (bottom) {
+      console.log("handling scroll")
+      this.display()
+    }
   }
 
   render() {
@@ -560,13 +573,16 @@ class Start extends Component {
 
         <hr />
         Below Is The Entire Data Set  
+        <div onScroll={this.handleScroll}>
           <HotTable data={this.state.data} 
-          colHeaders={true} 
-          rowHeaders={true} 
-          width="100%" 
-          height="300"
-          colWidths="100%"
-          formulas={true} />
+            colHeaders={true} 
+            rowHeaders={true} 
+            width="100%" 
+            height="300"
+            colWidths="100%"
+            formulas={true} />
+        </div>
+          
         {/* <div id="example"></div> */}
       </div>
 

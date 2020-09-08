@@ -109,7 +109,7 @@ router.get('/fetch-fifty-rows/:start_id', (req, res) => {
   const end_id = Number(start_id) + 50;
 
   //exclude the start, include the end
-  let queryString = "SELECT * FROM excel WHERE id > " + start_id + " AND id <= " + end_id
+  let queryString = "SELECT * FROM excel WHERE id >= " + start_id + " AND id < " + end_id
   console.log("the query string to fetch 50 rows is: "  + queryString)
   connection.query(queryString, (err, rows, fields) => {
     if (err) {
