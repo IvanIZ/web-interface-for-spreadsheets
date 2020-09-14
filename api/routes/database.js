@@ -9,7 +9,8 @@ function getConnection() {
       user: 'root',
       password: 'password', 
       database: 'spreadsheetweb',
-      port: 3307
+      port: 3307,
+      multipleStatements: true
       //insecureAuth : true
     })
 }
@@ -76,6 +77,7 @@ router.post('/insert-content', (req, res) => {
   let matrix = []
   matrix = req.body.formResults.matrix
   let num_attr = req.body.formResults.num_attr
+  console.log(matrix)
 
   //generate sql query
   let queryStart = 'INSERT INTO excel ('
@@ -259,7 +261,6 @@ router.post('/insert-result-content', (req, res) => {
     }
   })
   res.end()
-  //return res.json(results)
 })
 
 
@@ -293,6 +294,36 @@ router.post('/range-index-retrieval', (req, res) => {
 
   //res.end()
 });
+
+//insert tuples from spreadsheet to DB
+router.post('/update-content', (req, res) => {
+  console.log("Trying to update the tuples")
+  
+  //data matrix and number of attributes in the current table
+  let data = []
+  data = req.body.message.data
+  console.log(data)
+
+  var queries = '';
+
+  data.forEach(function (item) {
+    queries += mysql.format('UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);', item);
+  });
+  console.log("the generated query string to insert is: " + queries)
+
+  //generate sql query
+  // y, value, x
+  let queryStart = 'UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?)'
+  getConnection().query(queries, (err, results, fields) => {
+    if (err) {
+        console.log("Failed to insert new user: " + err)
+        res.sendStatus(500)
+        return
+    }
+  })
+  res.end()
+  //return res.json(results)
+})
 
 
 

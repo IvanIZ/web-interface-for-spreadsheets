@@ -804,7 +804,10 @@ class Result extends Component {
                   <p>Please upload your spreadsheet below</p>
                   <p className="lead">
                     <input type="file" onChange={this.fileHandler.bind(this)} style={{"padding":"10px"}} />
+                    
                     <Button size='lg' className='redirect-button' color="primary" onClick={this.redirect_start} >To Start Page</Button> 
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <Button size='lg' className='redirect-button' color="primary" onClick={this.deleteDBTable} >Delete Table</Button> 
                   </p>
                   {range_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;

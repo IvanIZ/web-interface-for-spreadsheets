@@ -24,6 +24,7 @@ import {
 import Spreadsheet from "react-spreadsheet";
 import { ReactCanvasGrid } from 'react-canvas-grid';
 import InfiniteScroll from "react-infinite-scroll-component";
+import io from "socket.io-client";
 
 //default order: 6
 const BPlusTree = require('bplustree');
@@ -33,11 +34,13 @@ let outputTable, searchResultTable, single_search_button, range_search_button, s
 let single_search_returned_key = [], remove_returned_key = [], range_remove_returned_key = []
 let singleSearchResult = [], range_search_result = [], range_search_returned_key = [], arri_array = []
 
-let data = [], dataMatrix = [], columns = [], buffer = [], single_search_display_matrix = []
+let data = [], dataMatrix = [], columns = [], buffer = [], single_search_display_matrix = [], buffer_copy = []
 let DIV_WIDTH = 1260
 let PREFETCH_SIZE = 50
 let noData = true
-let ATT_NUM = 12
+let ATT_NUM = 7
+let scrolltop = 0
+let data_display = []
 
 //search result variables
 let SEARCH_RESULT_PREFETCH_SIZE = 10;
@@ -65,8 +68,8 @@ const search_display_style = {
 
 class Start extends Component {
 
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       rows: [],
       cols: [],
@@ -109,8 +112,32 @@ class Start extends Component {
       redirect_import_page: false, 
       import_page_link: '/result', 
 
-      data: []
+      data_original: [], 
+      check_cell_update: false, 
+
+      test_block: "ORIGINAL MESSAGE"
     }
+
+    this.socket = io('localhost:3001');
+
+    this.socket.on('RECEIVE_MESSAGE', function(data){
+      addMessage(data);
+    });
+
+    const addMessage = data => {
+        console.log(data);
+        let change_table = data.data
+        // y, value, x
+        for (var x = 0; x < change_table.length && x < data_display.length; x++) {
+          let j = change_table[x][0] - 1   // 0 --> y_coord
+          let value = change_table[x][1] // 1 --> actual value
+          let i = change_table[x][2] - 1 // 2 --> x_coord
+          data_display[i][j] = value
+        }
+        this.setState({
+          test_block: data.try_message
+        });
+    };
 
     this.toggleSearchSelectionModal = this.toggleSearchSelectionModal.bind()
     this.toggleRangeSearchModal = this.toggleRangeSearchModal.bind()
@@ -125,8 +152,10 @@ class Start extends Component {
 
   // fetch 50 rows of data into the buffer
   async componentDidMount() {
+    document.addEventListener("keydown", this.handleEnter, false);
 
     buffer = []
+    buffer_copy = []
     let url = '/database/fetch-fifty-rows/' + 1
       fetch(url)
       .then(res => res.json())      
@@ -139,17 +168,17 @@ class Start extends Component {
           //load returned data into the buffer
           for (var i = 0; i < data.length; i++) {
             var temp = []
-            for (var j = 1; j < ATT_NUM; j++) {
+            for (var j = 1; j <= ATT_NUM; j++) {
               temp[j - 1] = data[i]['attribute' + j]
             }
             buffer[i] = temp;
+            buffer_copy[i] = temp.slice();
           }
           console.log("the buffer is: ")
           console.log(buffer)
         }
       });
   }
-
 
   toggleRemoveAckModal = () => {
     this.setState({
@@ -494,6 +523,7 @@ class Start extends Component {
 
   fetchMoreRows = (index) => {
     buffer = []
+    buffer_copy = []
     let url = '/database/fetch-fifty-rows/' + index
       fetch(url)
       .then(res => res.json())      
@@ -506,10 +536,11 @@ class Start extends Component {
           //load returned data into the buffer
           for (var i = 0; i < data.length; i++) {
             var temp = []
-            for (var j = 1; j < ATT_NUM; j++) {
+            for (var j = 1; j <= ATT_NUM; j++) {
               temp[j - 1] = data[i]['attribute' + j]
             }
             buffer[i] = temp;
+            buffer_copy[i] = temp.slice()
           }
           console.log("the buffer is: ")
           console.log(buffer)
@@ -520,10 +551,12 @@ class Start extends Component {
   // PROTOTYPE FOR HOW TO DYNAMICALLY PRE-FETCH DATA !!!!!!!!!!!!!!!!!!
   display = () => {
     this.setState({
-      data: this.state.data.concat(buffer)
+      data_original: this.state.data_original.concat(buffer)
     })
+    data_display = data_display.concat(buffer_copy) 
     this.fetchMoreRows(current_fetch_index)
     current_fetch_index += 50
+    console.log("diaplay called")
   }
 
   redirect_import = () => {
@@ -535,8 +568,73 @@ class Start extends Component {
   handleScroll = (e) => {
     const bottom = e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
     if (bottom) {
-      console.log("handling scroll")
       this.display()
+    }
+
+    if (e.target.scrollTop % 1000 < 300) {
+      scrolltop = e.target.scrollTop   
+    }
+    console.log("scrollTop is: ", e.target.scrollTop)
+  }
+
+  show_state = () => {
+    if (this.state.data_original.length !== 0) {
+      console.log("the current state of data_original is: ", this.state.data_original)
+      console.log("the current state of data_display is: ", data_display)
+    }
+  }
+
+  sendMessage = (message) => {
+    this.socket.emit('SEND_MESSAGE', message);
+  }
+
+  check_cell_change = (e) => {
+    if (e.keyCode === 13) {
+      console.log("Enter key down")
+      console.log(scrolltop)
+
+      // user pressed enter in a cell. Check update
+      let start_row_index = parseInt((scrolltop / 25) - 10)
+      if (start_row_index < 0) {
+        start_row_index = 0
+      }
+      let end_row_index = start_row_index + 90
+      let change_detected = false
+
+      // create a message to socket
+      let message = {
+        data:[], // 2d array to store difference: y, value, x
+        try_message: "SENT MESSAGE! SUCCESS!"
+      }
+      let index = 0;
+      for (var x = start_row_index; x < end_row_index && x < this.state.data_original.length; x++) {
+        for (var y = 0; y < ATT_NUM; y++) {
+          let temp = []
+          console.log("at (", x, ",", y, ") :", data_display[x][y])
+          console.log("at (", x, ",", y, ") :", this.state.data_original[x][y])
+          if (data_display[x][y] !== this.state.data_original[x][y]) {
+            change_detected = true
+            temp[0] = y + 1; // 0 --> y_coord; + 1 for database backend indexing
+            temp[1] = data_display[x][y]; // 1--> actual value
+            temp[2] = x + 1; // 2 --> x_coord; + 1 for database backend indexing
+            message.data[index] = temp;
+            this.state.data_original[x][y] = data_display[x][y]
+            index++;
+          }
+        }
+      }
+      this.sendMessage(message)
+
+      // Update backend
+      if (change_detected) {
+        //POST req here
+        const requestOptions = {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({message})
+        };
+        fetch('/database/update-content', requestOptions)
+      }
     }
   }
 
@@ -557,10 +655,13 @@ class Start extends Component {
                   <p className="lead">This is a simple web interface that allows you to upload spreadsheets and retrieve data.</p>
                   <hr className="my-2" />
                   <p>Choose display data, or retrieve data from below</p>
+                  <p>{this.state.test_block}</p>
                   <p className="lead">
                     <Button size='lg' className='redirect-button' color="primary" onClick={this.redirect_import} >To Import Page</Button> 
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     <Button size='lg' className='display-button' color="primary" onClick={this.display} >Display Dataset</Button> 
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <Button size='lg' className='display-button' color="primary" onClick={this.show_state} >show state</Button> 
                   </p>
                   {range_search_button}
                   &nbsp;&nbsp;&nbsp;&nbsp;
@@ -573,17 +674,18 @@ class Start extends Component {
 
         <hr />
         Below Is The Entire Data Set  
-        <div onScroll={this.handleScroll}>
-          <HotTable data={this.state.data} 
+        <div id = "display_portion"  onKeyUp={this.check_cell_change} onScroll={this.handleScroll}  tabIndex="1">
+          <HotTable data={data_display} 
             colHeaders={true} 
             rowHeaders={true} 
             width="100%" 
             height="300"
             colWidths="100%"
-            formulas={true} />
+            rowHeights="25"
+            contextMenu={true}
+             />
         </div>
           
-        {/* <div id="example"></div> */}
       </div>
 
     );

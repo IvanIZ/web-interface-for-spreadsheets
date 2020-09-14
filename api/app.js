@@ -7,6 +7,7 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var databaseRouter = require('./routes/database');
+var socket = require('socket.io');
 
 var app = express();
 
@@ -42,8 +43,21 @@ app.use(function(err, req, res, next) {
 });
 
 const port = process.env.PORT || 3001
-app.listen(port, () => {
+server = app.listen(port, () => {
   console.log("Backend server is up and listening on port 3001...")
 })
+
+io = socket(server);
+
+io.on('connection', (socket) => {
+  console.log(socket.id);
+
+  socket.on('SEND_MESSAGE', function(data){
+    io.emit('RECEIVE_MESSAGE', data);
+  })
+  
+});
+
+
 
 module.exports = app;
