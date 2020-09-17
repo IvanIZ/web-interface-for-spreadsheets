@@ -11,7 +11,6 @@ function getConnection() {
       database: 'spreadsheetweb',
       port: 3307,
       multipleStatements: true
-      //insecureAuth : true
     })
 }
 
@@ -77,7 +76,6 @@ router.post('/insert-content', (req, res) => {
   let matrix = []
   matrix = req.body.formResults.matrix
   let num_attr = req.body.formResults.num_attr
-  console.log(matrix)
 
   //generate sql query
   let queryStart = 'INSERT INTO excel ('
@@ -313,7 +311,6 @@ router.post('/update-content', (req, res) => {
 
   //generate sql query
   // y, value, x
-  let queryStart = 'UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?)'
   getConnection().query(queries, (err, results, fields) => {
     if (err) {
         console.log("Failed to insert new user: " + err)

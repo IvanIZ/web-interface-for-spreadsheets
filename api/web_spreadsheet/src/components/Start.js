@@ -12,7 +12,7 @@ import {
   Col,
   Jumbotron,
   Button,
-  Table, Modal, ModalHeader, ModalFooter, ModalBody, Form, FormGroup, Label, Input
+  Table, Modal, ModalHeader, ModalFooter, ModalBody, Form, FormGroup, Label, Input, ListGroup
 } from 'reactstrap';
 import {
   BrowserRouter as Router,
@@ -128,12 +128,25 @@ class Start extends Component {
         console.log(data);
         let change_table = data.data
         // y, value, x
-        for (var x = 0; x < change_table.length && x < data_display.length; x++) {
+        for (var x = 0; x < change_table.length; x++) {
           let j = change_table[x][0] - 1   // 0 --> y_coord
           let value = change_table[x][1] // 1 --> actual value
           let i = change_table[x][2] - 1 // 2 --> x_coord
-          data_display[i][j] = value
+          console.log(i, ", ", j)
+          if (i < data_display.length) {
+            data_display[i][j] = value     // NOT UPDATING DATA_ORIGINAL!
+          }
+
+          // check buffer
+          else if ((i + 1) < current_fetch_index) {
+            i++; // change i and j to 1-based index
+            if (buffer_copy[i + PREFETCH_SIZE - current_fetch_index][j] != value) {
+              buffer_copy[i + PREFETCH_SIZE - current_fetch_index][j] = value  // update both buffer and buffer_copy
+              buffer[i + PREFETCH_SIZE - current_fetch_index][j] = value
+            }
+          }
         }
+        console.log("after socket, buffer_copy is: ", buffer_copy)
         this.setState({
           test_block: data.try_message
         });
@@ -627,6 +640,7 @@ class Start extends Component {
 
       // Update backend
       if (change_detected) {
+        this.check_buffer();
         //POST req here
         const requestOptions = {
           method: 'POST',
@@ -636,6 +650,10 @@ class Start extends Component {
         fetch('/database/update-content', requestOptions)
       }
     }
+  }
+
+  check_buffer = () => {
+    console.log("Checking buffer");
   }
 
   render() {
