@@ -11,6 +11,10 @@ var socket = require('socket.io');
 
 var app = express();
 
+let current_users = []
+let user_dict = {}
+let history = []
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -50,13 +54,81 @@ server = app.listen(port, () => {
 io = socket(server);
 
 io.on('connection', (socket) => {
-  console.log(socket.id);
 
-  socket.on('SEND_MESSAGE', function(data){
-    io.emit('RECEIVE_MESSAGE', data);
+  // get usernames from frontend
+  socket.on('SEND_USERNAME', function(data) {
+    user_dict[socket.id] = data.user_name
+    current_users.push(data.user_name);
+    let message_package = {
+      current_users: current_users, 
+      history: history
+    }
+    io.emit('ADD_NEW_USER', message_package);
   })
+
+
+
+  // listen for cell data change
+  socket.on('SEND_MESSAGE', function(data){
+
+    // reflect data changes to other users
+    console.log("The frontend that send the data is:", socket.id)
+    io.emit('RECEIVE_MESSAGE', data);
+
+    // send the new update_message
+    let new_message = user_dict[socket.id] + " changed ";
+    let change_table = data.data
+
+    // get position, new value
+    for (var x = 0; x < change_table.length; x++) {
+      let letter = String.fromCharCode(64 + change_table[x][0]);
+      let number = change_table[x][2]
+      let new_value = change_table[x][1]
+      if (x == change_table.length - 1) {
+        new_message += "cell " + letter + number + " to " + new_value
+      } else {
+        new_message += "cell " + letter + number + " to " + new_value + ", "
+      }
+    }
+
+    // push the update into edit history, and send user the history
+    let history_line = (history.length + 1) + ". " + new_message + "\n"
+    history.push(history_line)
+    console.log("The history is: ", history);
+
+    // send the current update to user
+    new_message = "Last Edit: " + new_message
+    console.log(new_message)
+
+    let message_package = {
+      new_message: new_message, 
+      history: history
+    }
+    io.emit('UPDATE_EDIT_MESSAGE', message_package);
+  })
+
+
+  // listen for user disconnect
+  socket.on('disconnect', function() {
+    console.log("disconnected is is: ", socket.id)
+
+    // remove the user from the current user list
+    for (var i = 0; i < current_users.length; i++) {
+      console.log("current loop on ", current_users[i])
+      let user_name = user_dict[socket.id]
+      if (current_users[i].localeCompare(user_name) == 0) {
+        console.log("Disconnected user found")
+        current_users.splice(i, 1);
+      }
+    }
+
+    // send the new list of users back to frontend
+    io.emit('CHANGE_CURRENT_USER', current_users);
+    console.log(current_users)
+  });
   
 });
+
 
 
 
