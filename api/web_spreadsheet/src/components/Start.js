@@ -30,23 +30,33 @@ import io from "socket.io-client";
 const BPlusTree = require('bplustree');
 let tree = new BPlusTree()
 
-let outputTable, searchResultTable, single_search_button, range_search_button
-
 let data = [], dataMatrix = [], columns = [], buffer = [], buffer_copy = []
-let DIV_WIDTH = 1260
 let PREFETCH_SIZE = 50
 let noData = true
 let ATT_NUM = 7
 let scrolltop = 0
 let data_display = []
+let chn_copy = []
+let change_detected = false;
 
 let current_fetch_index = 51 //initial pre-prefetch index
 let num_attr = 0;
+
+let current_i = -1;
+let current_j = -1;
+let currently_editing = false;
+
+let conflict_i = -1;
+let conflict_j = -1;
+let incoming_value = "";
+let conflict_message = "";
 
 class Start extends Component {
 
   constructor() {
     super();
+    this.id = "hot";
+    this.hotTableComponent = React.createRef();
     this.state = {
       rows: [],
       cols: [],
@@ -75,7 +85,9 @@ class Start extends Component {
 
       edit_message: "Last Edit: No modification yet", 
       history: [], 
-      isShowHistoryOpen: false
+      isShowHistoryOpen: false, 
+
+      isConflictModalOpen: false 
     }
 
     this.socket = io('localhost:3001');
@@ -131,16 +143,40 @@ class Start extends Component {
 
     const addMessage = data => {
         console.log(data);
+
         let change_table = data.data
-        // y, value, x
         for (var x = 0; x < change_table.length; x++) {
+          // Extract data
           let j = change_table[x][0] - 1   // 0 --> y_coord
           let value = change_table[x][1] // 1 --> actual value
           let i = change_table[x][2] - 1 // 2 --> x_coord
-          console.log(i, ", ", j)
+
+          // Update spreadsheet
           if (i < data_display.length) {
-            data_display[i][j] = value     // NOT UPDATING DATA_ORIGINAL!
-            this.state.data_original[i][j] = value
+            console.log("data_display is: ", data_display[i][j]);
+            console.log("data original is:", this.state.data_original[i][j]);
+            
+            // Detect Conflict
+            if (currently_editing && current_i == i && current_j == j) {
+              conflict_i = current_i;
+              conflict_j = current_j;
+              incoming_value = value;
+
+              // Create Conflict Message
+
+              let username = data.user;
+              conflict_message = username + " has changed your currently editing cell to " + value + 
+                ". Do you accept the incoming change? ";
+
+              // handle conflict
+              this.toggleConflictModal();
+            } 
+            
+            // No conflict. Update directly
+            else {
+              data_display[i][j] = value     
+              this.state.data_original[i][j] = value
+            }
           }
 
           // check buffer
@@ -160,10 +196,40 @@ class Start extends Component {
 
     this.toggleUserNamePrompt = this.toggleUserNamePrompt.bind()
     this.toggleShowHistory = this.toggleShowHistory.bind()
+    this.toggleConflictModal = this.toggleConflictModal.bind()
   }
 
   // fetch 50 rows of data into the buffer
   async componentDidMount() {
+
+    this.hotTableComponent.current.hotInstance.addHook('afterChange', function(chn, src) {
+      if (src === 'edit') {
+        console.log(chn);
+        
+        // call check_cell_change if original and new data differ
+        if (chn[0][2] !== chn[0][3]) {
+          console.log("differ!");
+          chn_copy = chn;
+          change_detected = true;
+
+          // remove currently editing state
+          current_i = -1;
+          current_j = -1;
+          currently_editing = false;
+        }
+      }
+    });
+
+    this.hotTableComponent.current.hotInstance.addHook('afterBeginEditing', function(row, col) {
+
+      // record the currently editing location and state. 
+      current_i = row;
+      current_j = col;
+      currently_editing = true;
+      console.log(row);
+      console.log(col);
+      console.log("change detect is: ", change_detected);
+    });
 
     document.addEventListener("keydown", this.handleEnter, false);
 
@@ -195,6 +261,12 @@ class Start extends Component {
 
   componentWillUnmount() {
     this.socket.disconnect();
+  }
+
+  toggleConflictModal = () => {
+    this.setState({
+      isConflictModalOpen: !this.state.isConflictModalOpen
+    })
   }
 
   toggleShowHistory = () => {
@@ -309,7 +381,7 @@ class Start extends Component {
     data_display = data_display.concat(buffer_copy) 
     this.fetchMoreRows(current_fetch_index)
     current_fetch_index += 50
-    console.log("diaplay called")
+    console.log("diaplay called");
   }
 
   redirect_import = () => {
@@ -327,64 +399,49 @@ class Start extends Component {
     if (e.target.scrollTop % 1000 < 300) {
       scrolltop = e.target.scrollTop   
     }
-    console.log("scrollTop is: ", e.target.scrollTop)
   }
 
   show_state = () => {
-    console.log(this.state.history)
+    console.log(chn_copy);
+    console.log(change_detected);
   }
 
   sendMessage = (message) => {
     this.socket.emit('SEND_MESSAGE', message);
   }
 
-  check_cell_change = (e) => {
-    if (e.keyCode === 13) {
-      console.log("Enter key down")
-      console.log(scrolltop)
-
-      // user pressed enter in a cell. Check update
-      let start_row_index = parseInt((scrolltop / 25) - 10)
-      if (start_row_index < 0) {
-        start_row_index = 0
-      }
-      let end_row_index = start_row_index + 90
-      let change_detected = false
-
-      // create a message to socket
+  check_cell_change = () => {
+    // create a message to socket
+    if (change_detected) {
+      console.log("chn_copy is check cell change is: ", chn_copy);
       let message = {
         data:[], // 2d array to store difference: y, value, x, 
-        try_message: "SENT MESSAGE! SUCCESS!"
+        try_message: "SENT MESSAGE! SUCCESS!", 
+        user: this.state.user_name
       }
-      let index = 0;
-      for (var x = start_row_index; x < end_row_index && x < this.state.data_original.length; x++) {
-        for (var y = 0; y < ATT_NUM; y++) {
-          let temp = []
-          console.log("at (", x, ",", y, ") :", data_display[x][y])
-          console.log("at (", x, ",", y, ") :", this.state.data_original[x][y])
-          if (data_display[x][y] !== this.state.data_original[x][y]) {
-            change_detected = true
-            temp[0] = y + 1; // 0 --> y_coord; + 1 for database backend indexing
-            temp[1] = data_display[x][y]; // 1--> actual value
-            temp[2] = x + 1; // 2 --> x_coord; + 1 for database backend indexing
-            message.data[index] = temp;
-            this.state.data_original[x][y] = data_display[x][y]
-            index++;
-          }
-        }
-      }
+  
+      let temp = [];
+      let y_coord = parseInt(chn_copy[0][0]) + 1;
+      let x_coord = parseInt(chn_copy[0][1]) + 1;
+      let actual_value = chn_copy[0][3];
+      temp[0] = x_coord;
+      temp[1] = actual_value;
+      temp[2] = y_coord;
+      message.data[0] = temp;
+  
+      this.state.data_original[y_coord - 1][x_coord - 1] = actual_value; // not sure if we need this anymore
+      
+      // Send update message to socket and backend
+      this.sendMessage(message)
+      //POST req here
+      const requestOptions = {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message})
+      };
+      fetch('/database/update-content', requestOptions)
 
-      // Update backend
-      if (change_detected) {
-        this.sendMessage(message)
-        //POST req here
-        const requestOptions = {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({message})
-        };
-        fetch('/database/update-content', requestOptions)
-      }
+      change_detected = false;
     }
   }
 
@@ -413,12 +470,25 @@ class Start extends Component {
       this.toggleUserNamePrompt();
   }
 
+  resolve_conflict = (e) => {
+      e.preventDefault();
+      data_display[conflict_i][conflict_j] = incoming_value;
+      this.state.data_original[conflict_i][conflict_j] = incoming_value;
+
+      // reset conflict records
+      conflict_i = -1;
+      conflict_j = -1;
+      incoming_value = -1;
+      conflict_message = "";
+      this.toggleConflictModal();
+  }
+
   render() {
     if (this.state.redirect_import_page) {
       return <Redirect to={this.state.import_page_link} />
     }
     return (
-      <div className="App">
+      <div onClick={this.check_cell_change} onKeyUp={this.check_cell_change} className="App">
         <script src="node_modules/handsontable/dist/handsontable.full.min.js"></script>
         <link href="node_modules/handsontable/dist/handsontable.full.min.css" rel="stylesheet" media="screen"></link>
          <Jumbotron className='logo-jumbo'>
@@ -437,7 +507,7 @@ class Start extends Component {
                     <Button size='lg' className='display-button' color="primary" onClick={this.display} >Display Dataset</Button> 
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     {/* <Button size='lg' className='display-button' color="primary" onClick={this.show_state} >show state</Button>  */}
-                    <Button size='lg' className='display-button' color="primary" onClick={this.toggleShowHistory} >Edit History</Button>
+                    <Button size='lg' className='display-button' color="primary" onClick={this.show_state} >Edit History</Button>
                   </p>
                   <p>{this.state.edit_message}</p>
 
@@ -472,16 +542,29 @@ class Start extends Component {
                       <Button size='lg' color="primary" className='single_search_submit' onClick={this.toggleShowHistory}>Close</Button> {' '}
                     </ModalFooter>
                   </Modal>
+
+                  <Modal size='lg' isOpen={this.state.isConflictModalOpen} toggle={this.toggleConflictModal}>
+                    <ModalHeader toggle={this.toggleConflictModal}>Conflicting Incoming Changes from Other Users </ModalHeader>
+                    <ModalBody>
+                      {conflict_message}
+                    </ModalBody>
+                    <ModalFooter>
+                      <Button size='lg' color="primary" class="btn btn-primary btn-sm" onClick={this.resolve_conflict} block>Accept Incoming Changes</Button> {' '}
+                      <Button size='lg' color="secondary" class="btn btn-primary btn-sm" onClick={this.toggleConflictModal} block>Ignore Incoming Changes</Button>
+                    </ModalFooter>
+                  </Modal>
+
+                  
               
             {/* </Container> */}
         </Jumbotron>
         </div>
-        {searchResultTable}
 
         <hr />
         Below Is The Entire Data Set  
-        <div id = "display_portion"  onKeyUp={this.check_cell_change} onScroll={this.handleScroll}  tabIndex="1">
-          <HotTable data={data_display} 
+        {/* onKeyUp={this.check_cell_change} */}
+        <div id = "display_portion" onClick={this.check_cell_change} onKeyUp={this.check_cell_change} onScroll={this.handleScroll}  tabIndex="1">
+          <HotTable id ="display_table" data={data_display} ref={this.hotTableComponent} id={this.id}
             colHeaders={true} 
             rowHeaders={true} 
             width="100%" 

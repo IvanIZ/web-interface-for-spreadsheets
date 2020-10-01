@@ -51,6 +51,12 @@ server = app.listen(port, () => {
   console.log("Backend server is up and listening on port 3001...")
 })
 
+// =================================================Frontend & Backend Communication ================================================
+
+function process_formula() {
+  console.log("processing formula");
+}
+
 io = socket(server);
 
 io.on('connection', (socket) => {
@@ -84,6 +90,11 @@ io.on('connection', (socket) => {
       let letter = String.fromCharCode(64 + change_table[x][0]);
       let number = change_table[x][2]
       let new_value = change_table[x][1]
+
+      // Check if the new value is a formula and parse it
+      if (new_value.charAt(0) == '=') {
+        new_value = process_formula(new_value);
+      }
       if (x == change_table.length - 1) {
         new_message += "cell " + letter + number + " to " + new_value
       } else {
@@ -119,6 +130,7 @@ io.on('connection', (socket) => {
       if (current_users[i].localeCompare(user_name) == 0) {
         console.log("Disconnected user found")
         current_users.splice(i, 1);
+        break;
       }
     }
 
