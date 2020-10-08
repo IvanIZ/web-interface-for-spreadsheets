@@ -299,7 +299,8 @@ router.post('/update-content', (req, res) => {
   
   //data matrix and number of attributes in the current table
   let data = []
-  data = req.body.message.data
+  data = req.body.pending_changes.data
+  console.log("---------------------------------------------------------")
   console.log(data)
 
   var queries = '';

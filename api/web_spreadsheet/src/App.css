@@ -35,7 +35,6 @@
   background-color: #16817a !important;
   border-color: #16817a !important;
   margin-left:20px;
-  
 }
 
 .data-below-text {
@@ -59,6 +58,10 @@
 
 .App-link {
   color: #61dafb;
+}
+
+.myBg {
+  background: #f8ffa0;
 }
 
 @keyframes App-logo-spin {

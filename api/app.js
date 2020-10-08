@@ -8,6 +8,9 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var databaseRouter = require('./routes/database');
 var socket = require('socket.io');
+var Lock_Manager = require('./Lock_Manager');
+
+let lock_manager = new Lock_Manager();
 
 var app = express();
 
@@ -70,12 +73,59 @@ io.on('connection', (socket) => {
       history: history
     }
     io.emit('ADD_NEW_USER', message_package);
+    io.to(socket.id).emit("RECEIVE_ID", socket.id);
   })
 
 
+  // receive shared lock request from frontend
+  socket.on('REQUEST_SHARED_LOCK', function(shared_lock_request) {
+    let row = shared_lock_request.row;
+    let col = shared_lock_request.col;
+    let request_result = lock_manager.request_Shared_Lock(row, col, socket.id);
+
+    if (request_result) {
+      let shared_lock_accept = {
+        row: row, 
+        col: col
+      }
+      io.emit("REQUEST_SHARED_ACCEPT", shared_lock_accept)
+
+    } else {
+      let shared_lock_reject = {
+        row: row, 
+        col: col
+      }
+      io.to(socket.id).emit("REQUEST_SHARED_REJECT", shared_lock_reject)
+    }
+  })
+
+  // receive exclusive lock request from frontend
+  socket.on('REQUEST_EXCLUSIVE_LOCK', function(exclusive_lock_request) {
+    console.log("receive exclusive request!!")
+    let row = exclusive_lock_request.row;
+    let col = exclusive_lock_request.col;
+    let request_result = lock_manager.request_Exclusice_Lock(row, col, socket.id);
+
+    if (request_result) {
+      let exclusive_lock_accept = {
+        row: row, 
+        col: col, 
+        id: socket.id
+      }
+      io.emit("REQUEST_EXCLUSIVE_ACCEPT", exclusive_lock_accept)
+
+    } else {
+      let exclusive_lock_reject = {
+        row: row, 
+        col: col
+      }
+      io.to(socket.id).emit("REQUEST_EXCLUSIVE_REJECT", exclusive_lock_reject)
+    }
+  })
+
 
   // listen for cell data change
-  socket.on('SEND_MESSAGE', function(data){
+  socket.on('SEND_MESSAGE', function(data) {
 
     // reflect data changes to other users
     console.log("The frontend that send the data is:", socket.id)
@@ -118,6 +168,13 @@ io.on('connection', (socket) => {
     io.emit('UPDATE_EDIT_MESSAGE', message_package);
   })
 
+  socket.on('FINISH_TRANSACTION', function() {
+
+    // remove all possible locks of that user
+    let free_cells = lock_manager.finish_transaction(socket.id);
+    io.emit("RECEIVE_FREED_CELLS", free_cells);
+  });
+
 
   // listen for user disconnect
   socket.on('disconnect', function() {
@@ -137,6 +194,9 @@ io.on('connection', (socket) => {
     // send the new list of users back to frontend
     io.emit('CHANGE_CURRENT_USER', current_users);
     console.log(current_users)
+
+    // remove all possible locks of that user
+    lock_manager.finish_transaction(socket.id);
   });
   
 });
