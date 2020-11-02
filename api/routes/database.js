@@ -323,6 +323,35 @@ router.post('/update-content', (req, res) => {
   //return res.json(results)
 })
 
+// Send training data from the frontend to the database
+router.post('/send-training-data', (req, res) => {
+  console.log("Trying to update the tuples")
+  
+  //data matrix and number of attributes in the current table
+  let data = []
+  data = req.body.pending_changes.data
+  console.log("---------------------------------------------------------")
+  console.log(data)
+
+  var queries = '';
+
+  data.forEach(function (item) {
+    queries += mysql.format('UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);', item);
+  });
+  console.log("the generated query string to insert is: " + queries)
+
+  //generate sql query
+  // y, value, x
+  getConnection().query(queries, (err, results, fields) => {
+    if (err) {
+        console.log("Failed to insert new user: " + err)
+        res.sendStatus(500)
+        return
+    }
+  })
+  res.end()
+  //return res.json(results)
+})
 
 
 module.exports = router;

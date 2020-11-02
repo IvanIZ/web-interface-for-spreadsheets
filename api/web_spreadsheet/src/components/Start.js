@@ -37,11 +37,22 @@ import io from "socket.io-client";
 const BPlusTree = require('bplustree');
 let tree = new BPlusTree()
 
+// A JSON object that keeps track of previous layout changes
+let layout_changes = {
+  layout_changed: false,
+  changes: [] // 1st element: action;  2nd element: index
+}
+
+let user_actions = []
+let recorded_time = 0;
+
+let SCROLL_SIZE = 5;
+
 let data = [], dataMatrix = [], columns = [], buffer = [], buffer_copy = []
 let PREFETCH_SIZE = 50
 let noData = true
 let ATT_NUM = 7
-let scrolltop = 0
+let prev_scrolltop = 0
 let data_display = []
 let chn_copy = []
 let change_detected = false;
@@ -163,8 +174,8 @@ class Start extends Component {
       addNewUser(data);
     });
 
-    this.socket.on('RECEIVE_FREED_CELLS', function(free_cells) {
-      update_freed_cells(free_cells);
+    this.socket.on('RECEIVE_FREED_CELLS', function(free_cells_package) {
+      update_freed_cells(free_cells_package);
     });
 
     this.socket.on('UPDATE_EDIT_MESSAGE', function(message_package) {
@@ -178,15 +189,28 @@ class Start extends Component {
       })
     }
 
-    const update_freed_cells = free_cells => {
+    const update_freed_cells = free_cells_package => {
+
+      let free_cells = free_cells_package.free_cells;
+      let disconnect = free_cells_package.disconnect;
+
+      console.log("the free cells are ", free_cells);
 
       for (var i = 0; i < free_cells.length; i++) {
         let location = free_cells[i];
         if (location[0] < data_display.length) {
           
           let cell_data = this.hotTableComponent.current.hotInstance.getDataAtCell(location[0], location[1]);
-          let new_data = cell_data.substring(1);
-          this.hotTableComponent.current.hotInstance.setDataAtCell(location[0], location[1], new_data);
+
+          // update read-only cells
+          if (cell_data[0] == "*") {
+            let new_data = cell_data.substring(1);
+            this.hotTableComponent.current.hotInstance.setDataAtCell(location[0], location[1], new_data);
+          }
+
+          if (cell_data == "-----" && disconnect == true) {
+            data_display[location[0], location[1]] = this.state.data_original[location[0], location[1]];
+          }
         }
       }
       cell_read_only();
@@ -208,7 +232,7 @@ class Start extends Component {
       this.hotTableComponent.current.hotInstance.updateSettings({
         cells: function(row, col, prop){
          var cellProperties = {};
-           if(data_display[row][col] == "-----" || data_display[row][col].charAt(0) === "*"){
+           if(data_display[row][col] !== null && (data_display[row][col] == "-----" || data_display[row][col].charAt(0) === "*")){
              cellProperties.readOnly = 'true'
            }
          return cellProperties
@@ -249,7 +273,6 @@ class Start extends Component {
     }
 
     const toggleExclusiveLockReject = data => {
-      // console.log("shithsithsithsithisthsitisthisthsitisht");
       this.setState({
         isExclusiveLockRejectOpen: !this.state.isExclusiveLockRejectOpen
       })
@@ -312,6 +335,7 @@ class Start extends Component {
 
   // fetch 50 rows of data into the buffer
   async componentDidMount() {
+    recorded_time = Date.now() / 1000;
 
     display_dataset_button = <Button size='lg' className='display-button' color="primary" onClick={this.display} >Display Dataset</Button> 
 
@@ -338,10 +362,8 @@ class Start extends Component {
       // record the currently editing location and state. 
       current_i = row;
       current_j = col;
-      currently_editing = true;
-      console.log(row);
-      console.log(col);
-      console.log("change detect is: ", change_detected);
+      // currently_editing = true;
+      // console.log("current editing ", current_i, current_j);
     });
 
     this.hotTableComponent.current.hotInstance.addHook('afterSelection', function(row, column, row2, column2, preventScrolling, selectionLayerLevel) {
@@ -349,6 +371,46 @@ class Start extends Component {
       // record the currently editing location and state. 
       select_i = row;
       select_j = column;
+      // console.log(select_i, select_j);
+      currently_editing = true;
+    });
+
+    this.hotTableComponent.current.hotInstance.addHook('afterCreateRow', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.rowBelow") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "below", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "above", index]);
+      }
+    });
+
+    this.hotTableComponent.current.hotInstance.addHook('afterCreateCol', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.columnRight") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "right", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "left", index]);
+      }
+    });
+
+    this.hotTableComponent.current.hotInstance.addHook('afterRemoveRow', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_r", null, index]);
+      // console.log("index: ", index);
+      // console.log("amount: ", amount);
+      // console.log("source: ", source);
+    });
+
+    this.hotTableComponent.current.hotInstance.addHook('afterRemoveCol', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_c", null, index]);
+      // console.log("index: ", index);
+      // console.log("amount: ", amount);
+      // console.log("source: ", source);
     });
 
     document.addEventListener("keydown", this.handleEnter, false);
@@ -556,10 +618,7 @@ class Start extends Component {
     if (bottom) {
       this.display()
     }
-
-    if (e.target.scrollTop % 1000 < 300) {
-      scrolltop = e.target.scrollTop   
-    }
+    prev_scrolltop = e.target.scrollTop;
   }
 
   show_state = () => {
@@ -574,6 +633,24 @@ class Start extends Component {
   check_cell_change = () => {
     // create a message to socket
     if (change_detected) {
+
+      // find current state
+      let state = "Y"; //  Y means in a transaction
+      if (!this.state.transaction_mode) {
+        state = "N";
+      }
+
+      // extract features of the new value
+      let feature = "";
+      if (isNaN(chn_copy[0][3])) {
+        feature = "STR";
+      } else {
+        feature = "DIGIT";
+      }
+
+      // record user action
+      user_actions.push(["edit_cell", chn_copy[0][0], chn_copy[0][1], state, feature]);
+
       console.log("chn_copy is check cell change is===============================: ", chn_copy);
       this.request_exclusive_lock(chn_copy[0][0], chn_copy[0][1]);
       
@@ -652,7 +729,7 @@ class Start extends Component {
       transaction_mode: true
     })
     transaction_button = <Button size='lg' className='display-button' color="primary" onClick={this.end_transaction} >End Transaction</Button> 
-    apply_read_only_lock_button = <Button size='lg' className='display-button' color="primary" onClick={this.request_shared_lock} >Apply Read-Only Lock</Button> 
+    //apply_read_only_lock_button = <Button size='lg' className='display-button' color="primary" onClick={this.request_shared_lock} >Apply Read-Only Lock</Button> 
   }
 
   commit_transaction = () => {
@@ -674,15 +751,182 @@ class Start extends Component {
     setTimeout(() => {
       this.commit_transaction();
     }, 500);
-    // this.commit_transaction();
     this.setState({
       transaction_mode: false
     })
     transaction_button = <Button size='lg' className='display-button' color="primary" onClick={this.start_transaction} >Start Transaction</Button>
-    apply_read_only_lock_button = "";
+    //apply_read_only_lock_button = "";
 
     // tell the backend that transaction is completed
     this.socket.emit('FINISH_TRANSACTION');
+  }
+
+  track_action = (e, action_type) => {
+
+    // find current state
+    let state = "Y"; //  Y means in a transaction
+    if (!this.state.transaction_mode) {
+      state = "N";
+    }
+
+    // calculate idle time and record idle action if necessary
+    let idle_duration = (Date.now() / 1000) - recorded_time;
+    recorded_time = (Date.now() / 1000);
+    if (idle_duration > 3) {
+
+      // check if we can merge two idle periods together
+      if (user_actions.length > 0 && user_actions[user_actions.length - 1][0] == "idle") {
+        let prev_idle_time = user_actions[user_actions.length - 1][1];
+        user_actions.pop();
+        user_actions.push(["idle", parseInt(idle_duration) + prev_idle_time, state]);
+      } else {
+        user_actions.push(["idle", parseInt(idle_duration), state]);
+      }
+    }
+
+    // check and update possible spreadsheet layout change
+    if (layout_changes.layout_changed) { 
+      
+      // remove prev idle action
+      if (user_actions.length > 0 && user_actions[user_actions.length - 1][0] == "idle") {
+        user_actions.pop();
+      }
+
+      // add in all layout changes
+      for (var i = 0; i < layout_changes.changes.length; i++) {
+        let layout_change_type = layout_changes.changes[i][0];
+        let layout_change_direction = layout_changes.changes[i][1];
+        let change_index = layout_changes.changes[i][2];
+        user_actions.push([layout_change_type, change_index, layout_change_direction, state]);
+      }
+
+      // clear up current layout_changes recorder
+      layout_changes.changes.length = 0;
+      layout_changes.layout_changed = false;
+    }
+
+    // handle scroll actions
+    if (action_type == "scroll") {
+
+      let scroll_diff = prev_scrolltop - e.target.scrollTop;
+      let action_length = user_actions.length;
+
+      // don't hace scroll_diff === 0 because each scroll on mouse will result in two identical function calls
+      if (scroll_diff > 0) {
+        
+        // check if previous is a large up scroll. If so, do nothing
+        if (action_length >= 1 && user_actions[action_length - 1][0] === "up_scroll_l") {
+          // deliberately do nothing here
+        }
+
+        // check for combining 6 small up scrolls
+        else if (action_length >= SCROLL_SIZE) {
+          let combine = true;
+          for (var i = 0; i < SCROLL_SIZE; i++) {
+              if (user_actions[action_length - 1 - i][0] !== "up_scroll_s") {
+                combine = false;
+                break;
+              }
+          }
+
+          if (combine) {
+            for (var i = 0; i < SCROLL_SIZE; i++) {
+                user_actions.pop();
+            }
+            user_actions.push(["up_scroll_l", null, null, state]);
+          }
+
+          else {
+            user_actions.push(["up_scroll_s", null, null, state]);
+          }
+        }
+
+        else {
+          user_actions.push(["up_scroll_s", null, null, state]);
+        }
+
+      } else if (scroll_diff < 0) {
+
+        // check if previous is a large down scroll. If so, do nothing
+        if (action_length >= 1 && user_actions[action_length - 1][0] === "down_scroll_l") {
+            // deliberately do nothing here
+        }
+
+        // check for combining 6 small scrolls
+        else if (action_length >= SCROLL_SIZE) {
+          let combine = true;
+          for (var i = 0; i < SCROLL_SIZE; i++) {
+              if (user_actions[action_length - 1 - i][0] !== "down_scroll_s") {
+                combine = false;
+                break;
+              }
+          }
+          
+          if (combine) {
+            for (var i = 0; i < SCROLL_SIZE; i++) {
+                user_actions.pop();
+            }
+            user_actions.push(["down_scroll_l", null, null, state]);
+          }
+
+          else {
+            user_actions.push(["down_scroll_s", null, null, state]);
+          }
+        } 
+
+        else {
+          user_actions.push(["down_scroll_s", null, null, state]);
+        }
+      }
+      this.handleScroll(e);
+    }
+
+    // calculate click action
+    else if (action_type == "click") {
+
+      if (currently_editing && this.state.transaction_mode) {
+        
+        // select a row
+        if (select_j < 0) {
+          user_actions.push(["select_r", select_i, null, state]);
+        }
+
+        // select a column
+        else if (select_i < 0) {
+          user_actions.push(["select_c", select_j, null, state]);
+        }
+        
+        // select a cell
+        else {
+          user_actions.push([action_type, select_i, select_j, state]);
+        }
+        currently_editing = false;
+      }
+      this.check_cell_change();
+    }
+
+    // calculate kepress action
+    else if (action_type == "key_press") {
+
+      if (change_detected) {
+        // handle enter press
+        if (e.key == "Enter") {
+          user_actions.push(["keyPress_enter", chn_copy[0][0], chn_copy[0][1], state]);
+        }
+
+        // handle tab press
+        else if (e.key == "Tab") {
+          user_actions.push(["keyPress_tab", chn_copy[0][0], chn_copy[0][1], state]);
+        }
+
+        // all other press 
+        else {
+          user_actions.push(["keyPress", chn_copy[0][0], chn_copy[0][1], state]);
+        }
+      }
+      this.check_cell_change();
+    }
+    console.log(user_actions);
   }
 
   render() {
@@ -690,7 +934,7 @@ class Start extends Component {
       return <Redirect to={this.state.import_page_link} />
     }
     return (
-      <div onClick={this.check_cell_change} onKeyUp={this.check_cell_change} className="App">
+      <div onClick={e => this.track_action(e, "click")} onKeyUp={e => this.track_action(e, "key_press")} className="App">
         <script src="node_modules/handsontable/dist/handsontable.full.min.js"></script>
         <link href="node_modules/handsontable/dist/handsontable.full.min.css" rel="stylesheet" media="screen"></link>
          <Jumbotron className='logo-jumbo'>
@@ -792,8 +1036,8 @@ class Start extends Component {
 
         <hr />
         Below Is The Entire Data Set  
-        {/* onKeyUp={this.check_cell_change} */}
-        <div id = "display_portion" onClick={this.check_cell_change} onKeyUp={this.check_cell_change} onScroll={this.handleScroll}  tabIndex="1">
+        {/* <div id = "display_portion" onClick={this.check_cell_change} onKeyUp={this.check_cell_change} onScroll={this.handleScroll}  tabIndex="1"> */}
+        <div id = "display_portion" onScroll={e => this.track_action(e, "scroll")}  tabIndex="1">
           <HotTable className="handsontable" id ="display_table" data={data_display} ref={this.hotTableComponent} id={this.id}
             colHeaders={true} 
             rowHeaders={true} 
@@ -802,6 +1046,7 @@ class Start extends Component {
             colWidths="100%"
             rowHeights="25"
             contextMenu={true}
+            formulas={true}
             readOnly={!this.state.transaction_mode}
             />
         </div>

@@ -172,7 +172,11 @@ io.on('connection', (socket) => {
 
     // remove all possible locks of that user
     let free_cells = lock_manager.finish_transaction(socket.id);
-    io.emit("RECEIVE_FREED_CELLS", free_cells);
+    let free_cell_package = {
+      free_cells: free_cells,
+      disconnect: false
+    }
+    io.emit("RECEIVE_FREED_CELLS", free_cell_package);
   });
 
 
@@ -196,7 +200,12 @@ io.on('connection', (socket) => {
     console.log(current_users)
 
     // remove all possible locks of that user
-    lock_manager.finish_transaction(socket.id);
+    let free_cells = lock_manager.finish_transaction(socket.id);
+    let free_cell_package = {
+      free_cells: free_cells,
+      disconnect: true
+    }
+    io.emit("RECEIVE_FREED_CELLS", free_cell_package);
   });
   
 });
