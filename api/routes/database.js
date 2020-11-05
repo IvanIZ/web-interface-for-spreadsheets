@@ -328,15 +328,15 @@ router.post('/send-training-data', (req, res) => {
   console.log("Trying to update the tuples")
   
   //data matrix and number of attributes in the current table
-  let data = []
-  data = req.body.pending_changes.data
-  console.log("---------------------------------------------------------")
-  console.log(data)
+  let user_actions = []
+  user_actions = req.body.action_package.user_actions;
+  console.log(user_actions)
 
   var queries = '';
 
-  data.forEach(function (item) {
-    queries += mysql.format('UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);', item);
+  user_actions.forEach(function (item) {
+    // queries += mysql.format('UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);', item);
+    queries += mysql.format('INSERT INTO training_data (action, attribute1, attribute2, feature, schema_id, schema_attr, state) VALUES (?, ?, ?, ?, ?, ?, ?);', item);
   });
   console.log("the generated query string to insert is: " + queries)
 

@@ -43,6 +43,8 @@ let layout_changes = {
   changes: [] // 1st element: action;  2nd element: index
 }
 
+let col_headers = []
+
 let user_actions = []
 let recorded_time = 0;
 
@@ -605,6 +607,13 @@ class Start extends Component {
     data_display = data_display.concat(buffer_copy) 
     this.fetchMoreRows(current_fetch_index)
     current_fetch_index += 50
+
+    // fill in column headers and row headers
+    if (col_headers.length == 0) {
+      for (var i = 0; i < data_display[0].length; i++) {
+        col_headers[i] = data_display[0][i]
+      }
+    }
   }
 
   redirect_import = () => {
@@ -649,7 +658,7 @@ class Start extends Component {
       }
 
       // record user action
-      user_actions.push(["edit_cell", chn_copy[0][0], chn_copy[0][1], state, feature]);
+      user_actions.push(["edit_cell", chn_copy[0][0], chn_copy[0][1], feature, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
 
       console.log("chn_copy is check cell change is===============================: ", chn_copy);
       this.request_exclusive_lock(chn_copy[0][0], chn_copy[0][1]);
@@ -778,9 +787,9 @@ class Start extends Component {
       if (user_actions.length > 0 && user_actions[user_actions.length - 1][0] == "idle") {
         let prev_idle_time = user_actions[user_actions.length - 1][1];
         user_actions.pop();
-        user_actions.push(["idle", parseInt(idle_duration) + prev_idle_time, state]);
+        user_actions.push(["idle", parseInt(idle_duration) + prev_idle_time, null, null, null, null, state]);
       } else {
-        user_actions.push(["idle", parseInt(idle_duration), state]);
+        user_actions.push(["idle", parseInt(idle_duration), null, null, null, null, state]);
       }
     }
 
@@ -797,7 +806,7 @@ class Start extends Component {
         let layout_change_type = layout_changes.changes[i][0];
         let layout_change_direction = layout_changes.changes[i][1];
         let change_index = layout_changes.changes[i][2];
-        user_actions.push([layout_change_type, change_index, layout_change_direction, state]);
+        user_actions.push([layout_change_type, change_index, layout_change_direction, null, null, null, state]); // HEREHHEREHREHREHREHREHREHEHREHRHERHERHERHERHEHRERHERH!!!
       }
 
       // clear up current layout_changes recorder
@@ -833,16 +842,16 @@ class Start extends Component {
             for (var i = 0; i < SCROLL_SIZE; i++) {
                 user_actions.pop();
             }
-            user_actions.push(["up_scroll_l", null, null, state]);
+            user_actions.push(["up_scroll_l", null, null, null, null, null, state]);
           }
 
           else {
-            user_actions.push(["up_scroll_s", null, null, state]);
+            user_actions.push(["up_scroll_s", null, null, null, null, null, state]);
           }
         }
 
         else {
-          user_actions.push(["up_scroll_s", null, null, state]);
+          user_actions.push(["up_scroll_s", null, null, null, null, null, state]);
         }
 
       } else if (scroll_diff < 0) {
@@ -866,16 +875,16 @@ class Start extends Component {
             for (var i = 0; i < SCROLL_SIZE; i++) {
                 user_actions.pop();
             }
-            user_actions.push(["down_scroll_l", null, null, state]);
+            user_actions.push(["down_scroll_l", null, null, null, null, null, state]);
           }
 
           else {
-            user_actions.push(["down_scroll_s", null, null, state]);
+            user_actions.push(["down_scroll_s", null, null, null, null, null, state]);
           }
         } 
 
         else {
-          user_actions.push(["down_scroll_s", null, null, state]);
+          user_actions.push(["down_scroll_s", null, null, null, null, null, state]);
         }
       }
       this.handleScroll(e);
@@ -888,17 +897,17 @@ class Start extends Component {
         
         // select a row
         if (select_j < 0) {
-          user_actions.push(["select_r", select_i, null, state]);
+          user_actions.push(["select_r", select_i, null, null, null, null, state]);
         }
 
         // select a column
         else if (select_i < 0) {
-          user_actions.push(["select_c", select_j, null, state]);
+          user_actions.push(["select_c", select_j, null, null, null, null, state]);
         }
         
         // select a cell
         else {
-          user_actions.push([action_type, select_i, select_j, state]);
+          user_actions.push([action_type, select_i, select_j, null, select_i + 1, col_headers[select_j], state]);
         }
         currently_editing = false;
       }
@@ -911,22 +920,36 @@ class Start extends Component {
       if (change_detected) {
         // handle enter press
         if (e.key == "Enter") {
-          user_actions.push(["keyPress_enter", chn_copy[0][0], chn_copy[0][1], state]);
+          user_actions.push(["keyPress_enter", chn_copy[0][0], chn_copy[0][1], null, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state ]);
         }
 
         // handle tab press
         else if (e.key == "Tab") {
-          user_actions.push(["keyPress_tab", chn_copy[0][0], chn_copy[0][1], state]);
+          user_actions.push(["keyPress_tab", chn_copy[0][0], chn_copy[0][1], null, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
         }
 
         // all other press 
         else {
-          user_actions.push(["keyPress", chn_copy[0][0], chn_copy[0][1], state]);
+          user_actions.push(["keyPress", chn_copy[0][0], chn_copy[0][1], null, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
         }
       }
       this.check_cell_change();
     }
     console.log(user_actions);
+  }
+
+  store_training_data = () => {
+    user_actions.push(["END_TRAINING_DATA", null, null, null, null, null, "END"]);
+    let action_package = {
+      user_actions: user_actions
+    }
+    //POST req here
+    const requestOptions = {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action_package})
+    };
+    fetch('/database/send-training-data', requestOptions)
   }
 
   render() {
@@ -964,6 +987,8 @@ class Start extends Component {
                     {transaction_button}
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     {apply_read_only_lock_button}
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <Button size='lg' className='display-button' color="info" onClick={this.store_training_data} >Complete Simulation</Button>
                   </p>
                   <p>{this.state.edit_message}</p>
                   
