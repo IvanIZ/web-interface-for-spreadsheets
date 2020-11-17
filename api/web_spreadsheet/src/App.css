@@ -64,6 +64,16 @@
   background: #f8ffa0;
 }
 
+.margin-one {
+  margin-top: 1cm;
+  margin-bottom: 1cm;
+}
+
+.up-margin-one{
+  margin-top: 0.4cm;
+  margin-left: 0.2cm;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

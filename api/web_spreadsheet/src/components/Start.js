@@ -806,7 +806,7 @@ class Start extends Component {
         let layout_change_type = layout_changes.changes[i][0];
         let layout_change_direction = layout_changes.changes[i][1];
         let change_index = layout_changes.changes[i][2];
-        user_actions.push([layout_change_type, change_index, layout_change_direction, null, null, null, state]); // HEREHHEREHREHREHREHREHREHEHREHRHERHERHERHERHEHRERHERH!!!
+        user_actions.push([layout_change_type, change_index, layout_change_direction, null, null, null, state]); 
       }
 
       // clear up current layout_changes recorder
