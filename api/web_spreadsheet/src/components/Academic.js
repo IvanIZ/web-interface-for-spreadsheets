@@ -100,12 +100,18 @@ let pending_changes = {
 
 let socket_id = "";
 
+let ref1 = "";
+let ref2 = "";
+let ref3 = "";
+
 class Academic extends Component {
 
   constructor() {
     super();
     this.id = "hot";
     this.hotTableComponent = React.createRef();
+    this.hotTableComponent1 = React.createRef();
+    this.hotTableComponent2 = React.createRef();
     this.state = {
       collapsed: false,
       items: Array.from({ length: 0 }),
@@ -143,7 +149,13 @@ class Academic extends Component {
 
       redirect_link: "", 
       isRedirectConfirmOpen: false, 
-      redirect: false
+      redirect: false, 
+
+      isNameModalOpen: false, 
+      name: "", 
+      curr_table: "attendance", 
+
+      isRestartModalOpen: false
     }
 
     this.socket = io('localhost:3001');
@@ -192,10 +204,6 @@ class Academic extends Component {
       addNewUser(data);
     });
 
-    // this.socket.on('RECEIVE_FREED_CELLS', function(free_cells_package) {
-    //   update_freed_cells(free_cells_package);
-    // });
-
     this.socket.on('UPDATE_EDIT_MESSAGE', function(message_package) {
       update_edit_message(message_package);
     });
@@ -205,33 +213,6 @@ class Academic extends Component {
         edit_message: message_package.new_message, 
         history: message_package.history
       })
-    }
-
-    const update_freed_cells = free_cells_package => {
-
-      let free_cells = free_cells_package.free_cells;
-      let disconnect = free_cells_package.disconnect;
-
-      console.log("the free cells are ", free_cells);
-
-      for (var i = 0; i < free_cells.length; i++) {
-        let location = free_cells[i];
-        if (location[0] < data_display.length) {
-          
-          let cell_data = this.hotTableComponent.current.hotInstance.getDataAtCell(location[0], location[1]);
-
-          // update read-only cells
-          if (cell_data[0] == "*") {
-            let new_data = cell_data.substring(1);
-            this.hotTableComponent.current.hotInstance.setDataAtCell(location[0], location[1], new_data);
-          }
-
-          if (cell_data == "-----" && disconnect == true) {
-            data_display[location[0], location[1]] = this.state.data_original[location[0], location[1]];
-          }
-        }
-      }
-      cell_read_only();
     }
 
     const change_id = id => {
@@ -350,15 +331,20 @@ class Academic extends Component {
     this.toggleExclusiveLockReject = this.toggleExclusiveLockReject.bind();
     this.toggleInstructionModal = this.toggleInstructionModal.bind();
     this.toggleRedirectConfirmModal = this.toggleRedirectConfirmModal.bind();
+    this.toggleNameModal = this.toggleNameModal.bind();
+    this.toggleRestartModal = this.toggleRestartModal.bind();
   }
 
   // fetch 50 rows of data into the buffer
   async componentDidMount() {
+
     recorded_time = Date.now() / 1000;
 
     // display_dataset_button = <Button size='lg' className='display-button' color="primary" onClick={this.display} >Display Dataset</Button> 
     transaction_button = <Button size='lg' className='display-button' color="primary" onClick={this.start_transaction} >Start Transaction</Button>
 
+
+    // FIRST COMPONENT REF ========================================================================================
     this.hotTableComponent.current.hotInstance.addHook('afterChange', function(chn, src) {
       if (src === 'edit') {
         console.log(chn);
@@ -382,8 +368,6 @@ class Academic extends Component {
       // record the currently editing location and state. 
       current_i = row;
       current_j = col;
-      // currently_editing = true;
-      // console.log("current editing ", current_i, current_j);
     });
 
     this.hotTableComponent.current.hotInstance.addHook('afterSelection', function(row, column, row2, column2, preventScrolling, selectionLayerLevel) {
@@ -391,7 +375,6 @@ class Academic extends Component {
       // record the currently editing location and state. 
       select_i = row;
       select_j = column;
-      // console.log(select_i, select_j);
       currently_editing = true;
     });
 
@@ -420,40 +403,160 @@ class Academic extends Component {
     this.hotTableComponent.current.hotInstance.addHook('afterRemoveRow', function(index, amount, physicalRows, source) {
       layout_changes.layout_changed = true;
       layout_changes.changes.push(["remove_r", null, index]);
-      // console.log("index: ", index);
-      // console.log("amount: ", amount);
-      // console.log("source: ", source);
     });
 
     this.hotTableComponent.current.hotInstance.addHook('afterRemoveCol', function(index, amount, physicalRows, source) {
       layout_changes.layout_changed = true;
       layout_changes.changes.push(["remove_c", null, index]);
-      // console.log("index: ", index);
-      // console.log("amount: ", amount);
-      // console.log("source: ", source);
     });
-  }
 
-  request_shared_lock = () => {
-    // send request for a shared lock to backend
-    let shared_lock_request = {
-      row: select_i,
-      col: select_j
-    }
-    this.socket.emit('REQUEST_SHARED_LOCK', shared_lock_request);
-  }
+    // SECOND COMPONENT REF ========================================================================================
+    this.hotTableComponent1.current.hotInstance.addHook('afterChange', function(chn, src) {
+      if (src === 'edit') {
+        console.log(chn);
+        
+        // call check_cell_change if original and new data differ
+        if (chn[0][2] !== chn[0][3] && chn[0][3].charAt(0) !== "*" && chn[0][3] !== "-----") {
+          console.log("differ!");
+          chn_copy = chn;
+          change_detected = true;
 
-  request_exclusive_lock = (i, j) => {
-    // send request for a exclusive lock to backend
-    let exclusive_lock_request = {
-      row: i,
-      col: j
-    }
-    this.socket.emit('REQUEST_EXCLUSIVE_LOCK', exclusive_lock_request);
+          // remove currently editing state
+          current_i = -1;
+          current_j = -1;
+          currently_editing = false;
+        }
+      }
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterBeginEditing', function(row, col) {
+
+      // record the currently editing location and state. 
+      current_i = row;
+      current_j = col;
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterSelection', function(row, column, row2, column2, preventScrolling, selectionLayerLevel) {
+
+      // record the currently editing location and state. 
+      select_i = row;
+      select_j = column;
+      currently_editing = true;
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterCreateRow', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.rowBelow") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "below", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "above", index]);
+      }
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterCreateCol', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.columnRight") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "right", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "left", index]);
+      }
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterRemoveRow', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_r", null, index]);
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterRemoveCol', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_c", null, index]);
+    });
+
+    // THIRD COMPONENT REF ========================================================================================
+    this.hotTableComponent2.current.hotInstance.addHook('afterChange', function(chn, src) {
+      if (src === 'edit') {
+        console.log(chn);
+        
+        // call check_cell_change if original and new data differ
+        if (chn[0][2] !== chn[0][3] && chn[0][3].charAt(0) !== "*" && chn[0][3] !== "-----") {
+          console.log("differ!");
+          chn_copy = chn;
+          change_detected = true;
+
+          // remove currently editing state
+          current_i = -1;
+          current_j = -1;
+          currently_editing = false;
+        }
+      }
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterBeginEditing', function(row, col) {
+
+      // record the currently editing location and state. 
+      current_i = row;
+      current_j = col;
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterSelection', function(row, column, row2, column2, preventScrolling, selectionLayerLevel) {
+
+      // record the currently editing location and state. 
+      select_i = row;
+      select_j = column;
+      currently_editing = true;
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterCreateRow', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.rowBelow") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "below", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "above", index]);
+      }
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterCreateCol', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.columnRight") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "right", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "left", index]);
+      }
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterRemoveRow', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_r", null, index]);
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterRemoveCol', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_c", null, index]);
+    });
   }
 
   componentWillUnmount() {
     this.socket.disconnect();
+  }
+
+  toggleRestartModal = () => {
+    this.setState({
+      isRestartModalOpen: !this.state.isRestartModalOpen
+    })
+  }
+
+  toggleNameModal = () => {
+    this.setState({
+      isNameModalOpen: !this.state.isNameModalOpen
+    })
   }
 
   toggleRedirectConfirmModal = () => {
@@ -553,9 +656,7 @@ class Academic extends Component {
       }
 
       // record user action
-      user_actions.push(["edit_cell", chn_copy[0][0], chn_copy[0][1], feature, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
-
-      // this.request_exclusive_lock(chn_copy[0][0], chn_copy[0][1]);
+      user_actions.push([this.state.name, "edit_cell", chn_copy[0][0], chn_copy[0][1], feature, this.state.curr_table, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
       
       pending_changes.user = this.state.user_name
   
@@ -640,9 +741,6 @@ class Academic extends Component {
       transaction_mode: false
     })
     transaction_button = <Button size='lg' className='display-button' color="primary" onClick={this.start_transaction} >Start Transaction</Button>
-
-    // tell the backend that transaction is completed
-    // this.socket.emit('FINISH_TRANSACTION');
   }
 
   track_action = (e, action_type) => {
@@ -659,12 +757,12 @@ class Academic extends Component {
     if (idle_duration > 3) {
 
       // check if we can merge two idle periods together
-      if (user_actions.length > 0 && user_actions[user_actions.length - 1][0] == "idle") {
-        let prev_idle_time = user_actions[user_actions.length - 1][1];
+      if (user_actions.length > 0 && user_actions[user_actions.length - 1][1] == "idle") {
+        let prev_idle_time = user_actions[user_actions.length - 1][2];
         user_actions.pop();
-        user_actions.push(["idle", parseInt(idle_duration) + prev_idle_time, null, null, null, null, state]);
+        user_actions.push([this.state.name, "idle", parseInt(idle_duration) + prev_idle_time, null, null, this.state.curr_table, null, null, state]);
       } else {
-        user_actions.push(["idle", parseInt(idle_duration), null, null, null, null, state]);
+        user_actions.push([this.state.name, "idle", parseInt(idle_duration), null, null, this.state.curr_table, null, null, state]);
       }
     }
 
@@ -672,7 +770,7 @@ class Academic extends Component {
     if (layout_changes.layout_changed) { 
       
       // remove prev idle action
-      if (user_actions.length > 0 && user_actions[user_actions.length - 1][0] == "idle") {
+      if (user_actions.length > 0 && user_actions[user_actions.length - 1][1] == "idle") {
         user_actions.pop();
       }
 
@@ -681,7 +779,7 @@ class Academic extends Component {
         let layout_change_type = layout_changes.changes[i][0];
         let layout_change_direction = layout_changes.changes[i][1];
         let change_index = layout_changes.changes[i][2];
-        user_actions.push([layout_change_type, change_index, layout_change_direction, null, null, null, state]); 
+        user_actions.push([this.state.name, layout_change_type, change_index, layout_change_direction, null, this.state.curr_table, null, null, state]); 
       }
 
       // clear up current layout_changes recorder
@@ -699,7 +797,7 @@ class Academic extends Component {
       if (scroll_diff > 0) {
         
         // check if previous is a large up scroll. If so, do nothing
-        if (action_length >= 1 && user_actions[action_length - 1][0] === "up_scroll_l") {
+        if (action_length >= 1 && user_actions[action_length - 1][1] === "up_scroll_l") {
           // deliberately do nothing here
         }
 
@@ -707,7 +805,7 @@ class Academic extends Component {
         else if (action_length >= SCROLL_SIZE) {
           let combine = true;
           for (var i = 0; i < SCROLL_SIZE; i++) {
-              if (user_actions[action_length - 1 - i][0] !== "up_scroll_s") {
+              if (user_actions[action_length - 1 - i][1] !== "up_scroll_s") {
                 combine = false;
                 break;
               }
@@ -717,22 +815,22 @@ class Academic extends Component {
             for (var i = 0; i < SCROLL_SIZE; i++) {
                 user_actions.pop();
             }
-            user_actions.push(["up_scroll_l", null, null, null, null, null, state]);
+            user_actions.push([this.state.name, "up_scroll_l", null, null, null, this.state.curr_table, null, null, state]);
           }
 
           else {
-            user_actions.push(["up_scroll_s", null, null, null, null, null, state]);
+            user_actions.push([this.state.name, "up_scroll_s", null, null, null, this.state.curr_table, null, null, state]);
           }
         }
 
         else {
-          user_actions.push(["up_scroll_s", null, null, null, null, null, state]);
+          user_actions.push([this.state.name, "up_scroll_s", null, null, null, this.state.curr_table, null, null, state]);
         }
 
       } else if (scroll_diff < 0) {
 
         // check if previous is a large down scroll. If so, do nothing
-        if (action_length >= 1 && user_actions[action_length - 1][0] === "down_scroll_l") {
+        if (action_length >= 1 && user_actions[action_length - 1][1] === "down_scroll_l") {
             // deliberately do nothing here
         }
 
@@ -740,7 +838,7 @@ class Academic extends Component {
         else if (action_length >= SCROLL_SIZE) {
           let combine = true;
           for (var i = 0; i < SCROLL_SIZE; i++) {
-              if (user_actions[action_length - 1 - i][0] !== "down_scroll_s") {
+              if (user_actions[action_length - 1 - i][1] !== "down_scroll_s") {
                 combine = false;
                 break;
               }
@@ -750,16 +848,16 @@ class Academic extends Component {
             for (var i = 0; i < SCROLL_SIZE; i++) {
                 user_actions.pop();
             }
-            user_actions.push(["down_scroll_l", null, null, null, null, null, state]);
+            user_actions.push([this.state.name, "down_scroll_l", null, null, null, this.state.curr_table, null, null, state]);
           }
 
           else {
-            user_actions.push(["down_scroll_s", null, null, null, null, null, state]);
+            user_actions.push([this.state.name, "down_scroll_s", null, null, null, this.state.curr_table, null, null, state]);
           }
         } 
 
         else {
-          user_actions.push(["down_scroll_s", null, null, null, null, null, state]);
+          user_actions.push([this.state.name, "down_scroll_s", null, null, null, this.state.curr_table, null, null, state]);
         }
       }
       this.handleScroll(e);
@@ -772,17 +870,17 @@ class Academic extends Component {
         
         // select a row
         if (select_j < 0) {
-          user_actions.push(["select_r", select_i, null, null, null, null, state]);
+          user_actions.push([this.state.name, "select_r", select_i, null, null, this.state.curr_table, null, null, state]);
         }
 
         // select a column
         else if (select_i < 0) {
-          user_actions.push(["select_c", select_j, null, null, null, null, state]);
+          user_actions.push([this.state.name, "select_c", select_j, null, null, this.state.curr_table, null, null, state]);
         }
         
         // select a cell
         else {
-          user_actions.push([action_type, select_i, select_j, null, select_i + 1, col_headers[select_j], state]);
+          user_actions.push([this.state.name, action_type, select_i, select_j, null, this.state.curr_table, select_i + 1, col_headers[select_j], state]);
         }
         currently_editing = false;
       }
@@ -795,17 +893,17 @@ class Academic extends Component {
       if (change_detected) {
         // handle enter press
         if (e.key == "Enter") {
-          user_actions.push(["keyPress_enter", chn_copy[0][0], chn_copy[0][1], null, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state ]);
+          user_actions.push([this.state.name, "keyPress_enter", chn_copy[0][0], chn_copy[0][1], null, this.state.curr_table, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state ]);
         }
 
         // handle tab press
         else if (e.key == "Tab") {
-          user_actions.push(["keyPress_tab", chn_copy[0][0], chn_copy[0][1], null, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
+          user_actions.push([this.state.name, "keyPress_tab", chn_copy[0][0], chn_copy[0][1], null, this.state.curr_table, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
         }
 
         // all other press 
         else {
-          user_actions.push(["keyPress", chn_copy[0][0], chn_copy[0][1], null, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
+          user_actions.push([this.state.name, "keyPress", chn_copy[0][0], chn_copy[0][1], null, this.state.curr_table, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
         }
       }
       this.check_cell_change();
@@ -814,7 +912,7 @@ class Academic extends Component {
   }
 
   store_training_data = () => {
-    user_actions.push(["END_TRAINING_DATA", null, null, null, null, null, "END"]);
+    user_actions.push([this.state.name, "END_TRAINING_DATA", null, null, null, this.state.curr_table, null, null, "END"]);
     let action_package = {
       user_actions: user_actions
     }
@@ -824,7 +922,7 @@ class Academic extends Component {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({action_package})
     };
-    fetch('/training/send-training-data/' + simulation_type, requestOptions)
+    fetch('/training/send-training-data/academic', requestOptions)
   }
 
   select_simulation = (e) => {
@@ -852,6 +950,24 @@ class Academic extends Component {
     if (this.state.activeTab !== tab) {
         this.setState({ activeTab: tab });
     }
+    if (tab === '1') {  
+      this.setState({
+        curr_table: "attendance" 
+      })
+      col_headers = attendance_col_headers;
+      
+    } else if (tab === '2') {
+      this.setState({
+        curr_table: "cs225_gradebook"
+      })
+      col_headers = grade_book_col_headers;
+
+    } else if (tab === '3') {
+      this.setState({
+        curr_table: "student_status"
+      })
+      col_headers = student_status_col_headers
+    }
   }
 
   load_tables = (e) => {
@@ -867,9 +983,30 @@ class Academic extends Component {
           attendance_display = [attendance_col_headers].concat(attendance_display);
           greadebook_display = [grade_book_col_headers].concat(greadebook_display);
           student_status_display = [student_status_col_headers].concat(student_status_display);
-          this.toggleInstructionModal();
+          // this.toggleInstructionModal();
+          this.setState({
+            isInstructionOpen: false
+          })
       }, 500);
+      col_headers = attendance_col_headers;
+      // this.toggleNameModal();
+      this.setState({
+        isNameModalOpen: false
+      })
     }
+  }
+
+  reload_tables = () => {
+    table_loaded = true;
+    utils.load_simulation_v2(1, "attendance", attendance_display, buffer_copy, attendance_col_headers);
+    utils.load_simulation_v2(1, "grade_book", greadebook_display, buffer_copy, grade_book_col_headers);
+    utils.load_simulation_v2(1, "student_status", student_status_display, buffer_copy, student_status_col_headers);
+    setTimeout(() => {
+        attendance_display = [attendance_col_headers].concat(attendance_display);
+        greadebook_display = [grade_book_col_headers].concat(greadebook_display);
+        student_status_display = [student_status_col_headers].concat(student_status_display);
+    }, 500);
+    col_headers = attendance_col_headers;
   }
 
   redirect = (e) => {
@@ -879,6 +1016,42 @@ class Academic extends Component {
     })
   }
 
+  onNameSubmit = (e) => {
+    this.setState({
+        [e.target.name]: e.target.value
+    })
+  }
+
+  submitName = (e) => {
+    e.preventDefault();
+    console.log("state name is: ", this.state.name);
+    this.toggleNameModal();
+  }
+
+  restart = () => {
+    // reset all display
+    attendance_display = [];
+    greadebook_display = [];
+    student_status_display = [];
+    attendance_col_headers = [];
+    grade_book_col_headers = [];
+    student_status_col_headers = [];
+
+    // reload all tables
+    this.reload_tables();
+
+    // clear recorded actions
+    user_actions = [];
+
+    // set tab
+    this.setState({
+      activeTab: '1'
+    })
+    this.toggle('1');
+
+    // toggle restart confirmation
+    this.toggleRestartModal();
+  }
 
   render() {
     if (this.state.redirect) {
@@ -912,6 +1085,8 @@ class Academic extends Component {
                     {transaction_button}
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     <Button size='lg' className='display-button' color="info" onClick={this.store_training_data} >Complete Simulation</Button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <Button size='lg' className='display-button' color="info" onClick={this.restart} >Restart Simulation</Button>
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     <Button size='lg' className='display-button' color="info" onClick={this.toggleInstructionModal} >Instruction</Button>
                   </p>
@@ -968,6 +1143,29 @@ class Academic extends Component {
                     <Button size='lg' className='display-button' color="info" onClick={this.toggleRedirectConfirmModal}>Cancel</Button>
                     </ModalFooter>
                   </Modal>
+
+                  <Modal size='lg' isOpen={this.state.isNameModalOpen} toggle={this.toggleNameModal}>
+                    <ModalHeader toggle={this.toggleNameModal}>Please Enter Your Full Name</ModalHeader>
+                    <ModalBody>
+                      <Form onSubmit={this.submitName}>
+                        <FormGroup>
+                          <Label for="user_name">Enter Full Name</Label>
+                          <Input type="text" name="name" id="name" onChange={e => this.onNameSubmit(e)} />
+                        </FormGroup>
+                        <Button size='lg' color="primary" className='single_search_submit' type="submit" >Confirm</Button> {' '}
+                      </Form>
+                    </ModalBody>
+                  </Modal>
+
+                  <Modal size='lg' isOpen={this.state.isRestartModalOpen} toggle={this.toggleRestartModal}>
+                    <ModalHeader toggle={this.toggleRestartModal}>Please Enter Your Full Name</ModalHeader>
+                    <ModalBody>
+                      Your simulation has been restarted. All the changes that haven't been committed yet are clearned. 
+                    </ModalBody>
+                    <ModalFooter>
+                      <Button size='lg' className='display-button' color="info" onClick={this.toggleRestartModal}>Got It</Button>
+                    </ModalFooter>
+                  </Modal>
                   
                         
             </Jumbotron>
@@ -1022,7 +1220,7 @@ class Academic extends Component {
                     Gradebook
                 </h4> 
                 <div id = "display_portion" onScroll={e => this.track_action(e, "scroll")}  tabIndex="1">
-                    <HotTable className="handsontable" id ="display_table" data={greadebook_display} ref={this.hotTableComponent} id={this.id}
+                    <HotTable className="handsontable" id ="display_table" data={greadebook_display} ref={this.hotTableComponent1} id={this.id}
                         colHeaders={true} 
                         rowHeaders={true} 
                         width="100%" 
@@ -1041,7 +1239,7 @@ class Academic extends Component {
                     Student Status Table
                 </h4> 
                 <div id = "display_portion" onScroll={e => this.track_action(e, "scroll")}  tabIndex="1">
-                    <HotTable className="handsontable" id ="display_table" data={student_status_display} ref={this.hotTableComponent} id={this.id}
+                    <HotTable className="handsontable" id ="display_table" data={student_status_display} ref={this.hotTableComponent2} id={this.id}
                         colHeaders={true} 
                         rowHeaders={true} 
                         width="100%" 

@@ -106,6 +106,8 @@ class Financing extends Component {
     super();
     this.id = "hot";
     this.hotTableComponent = React.createRef();
+    this.hotTableComponent1 = React.createRef();
+    this.hotTableComponent2 = React.createRef();
     this.state = {
       collapsed: false,
       items: Array.from({ length: 0 }),
@@ -143,7 +145,9 @@ class Financing extends Component {
 
       redirect_link: "", 
       isRedirectConfirmOpen: false, 
-      redirect: false
+      redirect: false, 
+
+      isRestartModalOpen: false
     }
 
     this.socket = io('localhost:3001');
@@ -350,15 +354,17 @@ class Financing extends Component {
     this.toggleExclusiveLockReject = this.toggleExclusiveLockReject.bind();
     this.toggleInstructionModal = this.toggleInstructionModal.bind();
     this.toggleRedirectConfirmModal = this.toggleRedirectConfirmModal.bind();
+    this.toggleNameModal = this.toggleNameModal.bind();
+    this.toggleRestartModal = this.toggleRestartModal.bind();
   }
 
   // fetch 50 rows of data into the buffer
   async componentDidMount() {
     recorded_time = Date.now() / 1000;
 
-    // display_dataset_button = <Button size='lg' className='display-button' color="primary" onClick={this.display} >Display Dataset</Button> 
     transaction_button = <Button size='lg' className='display-button' color="primary" onClick={this.start_transaction} >Start Transaction</Button>
 
+    // FIRST REF ====================================================================================================
     this.hotTableComponent.current.hotInstance.addHook('afterChange', function(chn, src) {
       if (src === 'edit') {
         console.log(chn);
@@ -382,8 +388,6 @@ class Financing extends Component {
       // record the currently editing location and state. 
       current_i = row;
       current_j = col;
-      // currently_editing = true;
-      // console.log("current editing ", current_i, current_j);
     });
 
     this.hotTableComponent.current.hotInstance.addHook('afterSelection', function(row, column, row2, column2, preventScrolling, selectionLayerLevel) {
@@ -391,7 +395,6 @@ class Financing extends Component {
       // record the currently editing location and state. 
       select_i = row;
       select_j = column;
-      // console.log(select_i, select_j);
       currently_editing = true;
     });
 
@@ -420,17 +423,143 @@ class Financing extends Component {
     this.hotTableComponent.current.hotInstance.addHook('afterRemoveRow', function(index, amount, physicalRows, source) {
       layout_changes.layout_changed = true;
       layout_changes.changes.push(["remove_r", null, index]);
-      // console.log("index: ", index);
-      // console.log("amount: ", amount);
-      // console.log("source: ", source);
     });
 
     this.hotTableComponent.current.hotInstance.addHook('afterRemoveCol', function(index, amount, physicalRows, source) {
       layout_changes.layout_changed = true;
       layout_changes.changes.push(["remove_c", null, index]);
-      // console.log("index: ", index);
-      // console.log("amount: ", amount);
-      // console.log("source: ", source);
+    });
+
+    // SECOND REF ====================================================================================================
+    this.hotTableComponent1.current.hotInstance.addHook('afterChange', function(chn, src) {
+      if (src === 'edit') {
+        console.log(chn);
+        
+        // call check_cell_change if original and new data differ
+        if (chn[0][2] !== chn[0][3] && chn[0][3].charAt(0) !== "*" && chn[0][3] !== "-----") {
+          console.log("differ!");
+          chn_copy = chn;
+          change_detected = true;
+
+          // remove currently editing state
+          current_i = -1;
+          current_j = -1;
+          currently_editing = false;
+        }
+      }
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterBeginEditing', function(row, col) {
+
+      // record the currently editing location and state. 
+      current_i = row;
+      current_j = col;
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterSelection', function(row, column, row2, column2, preventScrolling, selectionLayerLevel) {
+
+      // record the currently editing location and state. 
+      select_i = row;
+      select_j = column;
+      currently_editing = true;
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterCreateRow', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.rowBelow") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "below", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "above", index]);
+      }
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterCreateCol', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.columnRight") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "right", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "left", index]);
+      }
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterRemoveRow', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_r", null, index]);
+    });
+
+    this.hotTableComponent1.current.hotInstance.addHook('afterRemoveCol', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_c", null, index]);
+    });
+
+    // THIRD REF ====================================================================================================
+    this.hotTableComponent2.current.hotInstance.addHook('afterChange', function(chn, src) {
+      if (src === 'edit') {
+        console.log(chn);
+        
+        // call check_cell_change if original and new data differ
+        if (chn[0][2] !== chn[0][3] && chn[0][3].charAt(0) !== "*" && chn[0][3] !== "-----") {
+          console.log("differ!");
+          chn_copy = chn;
+          change_detected = true;
+
+          // remove currently editing state
+          current_i = -1;
+          current_j = -1;
+          currently_editing = false;
+        }
+      }
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterBeginEditing', function(row, col) {
+
+      // record the currently editing location and state. 
+      current_i = row;
+      current_j = col;
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterSelection', function(row, column, row2, column2, preventScrolling, selectionLayerLevel) {
+
+      // record the currently editing location and state. 
+      select_i = row;
+      select_j = column;
+      currently_editing = true;
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterCreateRow', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.rowBelow") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "below", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_r", "above", index]);
+      }
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterCreateCol', function(index, amount, source) {
+      console.log("insert index is: ", index);
+      if (source == "ContextMenu.columnRight") {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "right", index]);
+      } else {
+        layout_changes.layout_changed = true;
+        layout_changes.changes.push(["insert_c", "left", index]);
+      }
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterRemoveRow', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_r", null, index]);
+    });
+
+    this.hotTableComponent2.current.hotInstance.addHook('afterRemoveCol', function(index, amount, physicalRows, source) {
+      layout_changes.layout_changed = true;
+      layout_changes.changes.push(["remove_c", null, index]);
     });
   }
 
@@ -454,6 +583,18 @@ class Financing extends Component {
 
   componentWillUnmount() {
     this.socket.disconnect();
+  }
+
+  toggleRestartModal = () => {
+    this.setState({
+      isRestartModalOpen: !this.state.isRestartModalOpen
+    })
+  }
+
+  toggleNameModal = () => {
+    this.setState({
+      isNameModalOpen: !this.state.isNameModalOpen
+    })
   }
 
   toggleRedirectConfirmModal = () => {
@@ -553,7 +694,7 @@ class Financing extends Component {
       }
 
       // record user action
-      user_actions.push(["edit_cell", chn_copy[0][0], chn_copy[0][1], feature, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
+      user_actions.push([this.state.name, "edit_cell", chn_copy[0][0], chn_copy[0][1], feature, this.state.curr_table, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
 
       // this.request_exclusive_lock(chn_copy[0][0], chn_copy[0][1]);
       
@@ -656,12 +797,12 @@ class Financing extends Component {
     if (idle_duration > 3) {
 
       // check if we can merge two idle periods together
-      if (user_actions.length > 0 && user_actions[user_actions.length - 1][0] == "idle") {
-        let prev_idle_time = user_actions[user_actions.length - 1][1];
+      if (user_actions.length > 0 && user_actions[user_actions.length - 1][1] == "idle") {
+        let prev_idle_time = user_actions[user_actions.length - 1][2];
         user_actions.pop();
-        user_actions.push(["idle", parseInt(idle_duration) + prev_idle_time, null, null, null, null, state]);
+        user_actions.push([this.state.name, "idle", parseInt(idle_duration) + prev_idle_time, null, null, this.state.curr_table, null, null, state]);
       } else {
-        user_actions.push(["idle", parseInt(idle_duration), null, null, null, null, state]);
+        user_actions.push([this.state.name, "idle", parseInt(idle_duration), null, null, this.state.curr_table, null, null, state]);
       }
     }
 
@@ -669,7 +810,7 @@ class Financing extends Component {
     if (layout_changes.layout_changed) { 
       
       // remove prev idle action
-      if (user_actions.length > 0 && user_actions[user_actions.length - 1][0] == "idle") {
+      if (user_actions.length > 0 && user_actions[user_actions.length - 1][1] == "idle") {
         user_actions.pop();
       }
 
@@ -678,7 +819,7 @@ class Financing extends Component {
         let layout_change_type = layout_changes.changes[i][0];
         let layout_change_direction = layout_changes.changes[i][1];
         let change_index = layout_changes.changes[i][2];
-        user_actions.push([layout_change_type, change_index, layout_change_direction, null, null, null, state]); 
+        user_actions.push([this.state.name, layout_change_type, change_index, layout_change_direction, null, this.state.curr_table, null, null, state]); 
       }
 
       // clear up current layout_changes recorder
@@ -696,7 +837,7 @@ class Financing extends Component {
       if (scroll_diff > 0) {
         
         // check if previous is a large up scroll. If so, do nothing
-        if (action_length >= 1 && user_actions[action_length - 1][0] === "up_scroll_l") {
+        if (action_length >= 1 && user_actions[action_length - 1][1] === "up_scroll_l") {
           // deliberately do nothing here
         }
 
@@ -704,7 +845,7 @@ class Financing extends Component {
         else if (action_length >= SCROLL_SIZE) {
           let combine = true;
           for (var i = 0; i < SCROLL_SIZE; i++) {
-              if (user_actions[action_length - 1 - i][0] !== "up_scroll_s") {
+              if (user_actions[action_length - 1 - i][1] !== "up_scroll_s") {
                 combine = false;
                 break;
               }
@@ -714,22 +855,22 @@ class Financing extends Component {
             for (var i = 0; i < SCROLL_SIZE; i++) {
                 user_actions.pop();
             }
-            user_actions.push(["up_scroll_l", null, null, null, null, null, state]);
+            user_actions.push([this.state.name, "up_scroll_l", null, null, null, this.state.curr_table, null, null, state]);
           }
 
           else {
-            user_actions.push(["up_scroll_s", null, null, null, null, null, state]);
+            user_actions.push([this.state.name, "up_scroll_s", null, null, null, this.state.curr_table, null, null, state]);
           }
         }
 
         else {
-          user_actions.push(["up_scroll_s", null, null, null, null, null, state]);
+          user_actions.push([this.state.name, "up_scroll_s", null, null, null, this.state.curr_table, null, null, state]);
         }
 
       } else if (scroll_diff < 0) {
 
         // check if previous is a large down scroll. If so, do nothing
-        if (action_length >= 1 && user_actions[action_length - 1][0] === "down_scroll_l") {
+        if (action_length >= 1 && user_actions[action_length - 1][1] === "down_scroll_l") {
             // deliberately do nothing here
         }
 
@@ -737,7 +878,7 @@ class Financing extends Component {
         else if (action_length >= SCROLL_SIZE) {
           let combine = true;
           for (var i = 0; i < SCROLL_SIZE; i++) {
-              if (user_actions[action_length - 1 - i][0] !== "down_scroll_s") {
+              if (user_actions[action_length - 1 - i][1] !== "down_scroll_s") {
                 combine = false;
                 break;
               }
@@ -747,16 +888,16 @@ class Financing extends Component {
             for (var i = 0; i < SCROLL_SIZE; i++) {
                 user_actions.pop();
             }
-            user_actions.push(["down_scroll_l", null, null, null, null, null, state]);
+            user_actions.push([this.state.name, "down_scroll_l", null, null, null, this.state.curr_table, null, null, state]);
           }
 
           else {
-            user_actions.push(["down_scroll_s", null, null, null, null, null, state]);
+            user_actions.push([this.state.name, "down_scroll_s", null, null, null, this.state.curr_table, null, null, state]);
           }
         } 
 
         else {
-          user_actions.push(["down_scroll_s", null, null, null, null, null, state]);
+          user_actions.push([this.state.name, "down_scroll_s", null, null, null, this.state.curr_table, null, null, state]);
         }
       }
       this.handleScroll(e);
@@ -769,17 +910,17 @@ class Financing extends Component {
         
         // select a row
         if (select_j < 0) {
-          user_actions.push(["select_r", select_i, null, null, null, null, state]);
+          user_actions.push([this.state.name, "select_r", select_i, null, null, this.state.curr_table, null, null, state]);
         }
 
         // select a column
         else if (select_i < 0) {
-          user_actions.push(["select_c", select_j, null, null, null, null, state]);
+          user_actions.push([this.state.name, "select_c", select_j, null, null, this.state.curr_table, null, null, state]);
         }
         
         // select a cell
         else {
-          user_actions.push([action_type, select_i, select_j, null, select_i + 1, col_headers[select_j], state]);
+          user_actions.push([this.state.name, action_type, select_i, select_j, null, this.state.curr_table, select_i + 1, col_headers[select_j], state]);
         }
         currently_editing = false;
       }
@@ -792,17 +933,17 @@ class Financing extends Component {
       if (change_detected) {
         // handle enter press
         if (e.key == "Enter") {
-          user_actions.push(["keyPress_enter", chn_copy[0][0], chn_copy[0][1], null, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state ]);
+          user_actions.push([this.state.name, "keyPress_enter", chn_copy[0][0], chn_copy[0][1], null, this.state.curr_table, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state ]);
         }
 
         // handle tab press
         else if (e.key == "Tab") {
-          user_actions.push(["keyPress_tab", chn_copy[0][0], chn_copy[0][1], null, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
+          user_actions.push([this.state.name, "keyPress_tab", chn_copy[0][0], chn_copy[0][1], null, this.state.curr_table, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
         }
 
         // all other press 
         else {
-          user_actions.push(["keyPress", chn_copy[0][0], chn_copy[0][1], null, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
+          user_actions.push([this.state.name, "keyPress", chn_copy[0][0], chn_copy[0][1], null, this.state.curr_table, chn_copy[0][0] + 1, col_headers[chn_copy[0][1]], state]);
         }
       }
       this.check_cell_change();
@@ -811,7 +952,7 @@ class Financing extends Component {
   }
 
   store_training_data = () => {
-    user_actions.push(["END_TRAINING_DATA", null, null, null, null, null, "END"]);
+    user_actions.push([this.state.name, "END_TRAINING_DATA", null, null, null, this.state.curr_table, null, null, "END"]);
     let action_package = {
       user_actions: user_actions
     }
@@ -821,7 +962,7 @@ class Financing extends Component {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({action_package})
     };
-    fetch('/training/send-training-data/' + simulation_type, requestOptions)
+    fetch('/training/send-training-data/financing', requestOptions)
   }
 
   select_simulation = (e) => {
@@ -848,6 +989,24 @@ class Financing extends Component {
     if (this.state.activeTab !== tab) {
         this.setState({ activeTab: tab });
     }
+    if (tab === "1") {  
+      this.setState({
+        curr_table: "monthly_expenses"
+      })
+      col_headers = monthly_expense_col_headers;
+
+    } else if (tab === "2") {
+      this.setState({
+        curr_table: "montly_income"
+      })
+      col_headers = monthly_income_col_headers;
+
+    } else if (tab === "3") {
+      this.setState({
+        curr_table: "check_book"
+      })
+      col_headers = check_book_col_headers;
+    }
   }
 
   load_tables = (e) => {
@@ -865,7 +1024,21 @@ class Financing extends Component {
           check_book_display = [check_book_col_headers].concat(check_book_display);
           this.toggleInstructionModal();
       }, 500);
+      col_headers = monthly_expense_col_headers;
+      this.toggleNameModal();
     }
+  }
+
+  reload_tables = () => {
+    utils.load_simulation_v2(1, "monthly_expense", monthly_expense_display, buffer_copy, monthly_expense_col_headers);
+    utils.load_simulation_v2(1, "monthly_income", monthly_income_display, buffer_copy, monthly_income_col_headers);
+    utils.load_simulation_v2(1, "check_book", check_book_display, buffer_copy, check_book_col_headers);
+    setTimeout(() => {
+        monthly_expense_display = [monthly_expense_col_headers].concat(monthly_expense_display);
+        monthly_income_display = [monthly_income_col_headers].concat(monthly_income_display);
+        check_book_display = [check_book_col_headers].concat(check_book_display);
+    }, 500);
+    col_headers = monthly_expense_col_headers;
   }
 
   redirect = (e) => {
@@ -873,6 +1046,43 @@ class Financing extends Component {
     this.setState({
       redirect: true
     })
+  }
+
+  onNameSubmit = (e) => {
+    this.setState({
+        [e.target.name]: e.target.value
+    })
+  }
+
+  submitName = (e) => {
+    e.preventDefault();
+    console.log("state name is: ", this.state.name);
+    this.toggleNameModal();
+  }
+
+  restart = () => {
+    // reset all display
+    monthly_expense_display = [];
+    monthly_income_display = [];
+    check_book_display = [];
+    monthly_expense_col_headers = [];
+    monthly_income_col_headers = [];
+    check_book_col_headers = [];
+
+    // reload all tables
+    this.reload_tables();
+
+    // clear recorded actions
+    user_actions = [];
+
+    // set tab
+    this.setState({
+      activeTab: '1'
+    })
+    this.toggle('1');
+
+    // toggle restart confirmation
+    this.toggleRestartModal();
   }
 
   render() {
@@ -906,6 +1116,8 @@ class Financing extends Component {
                     {transaction_button}
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     <Button size='lg' className='display-button' color="info" onClick={this.store_training_data} >Complete Simulation</Button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <Button size='lg' className='display-button' color="info" onClick={this.restart} >Restart Simulation</Button>
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     <Button size='lg' className='display-button' color="info" onClick={this.toggleInstructionModal} >Instruction</Button>
                   </p>
@@ -946,6 +1158,29 @@ class Financing extends Component {
                     <ModalFooter>
                     <Button size='lg' className='display-button' color="info" onClick={this.redirect}>Confirm</Button> {' '}
                     <Button size='lg' className='display-button' color="info" onClick={this.toggleRedirectConfirmModal}>Cancel</Button>
+                    </ModalFooter>
+                  </Modal>
+
+                  <Modal size='lg' isOpen={this.state.isNameModalOpen} toggle={this.toggleNameModal}>
+                    <ModalHeader toggle={this.toggleNameModal}>Please Enter Your Full Name</ModalHeader>
+                    <ModalBody>
+                      <Form onSubmit={this.submitName}>
+                        <FormGroup>
+                          <Label for="user_name">Enter Full Name</Label>
+                          <Input type="text" name="name" id="name" onChange={e => this.onNameSubmit(e)} />
+                        </FormGroup>
+                        <Button size='lg' color="primary" className='single_search_submit' type="submit" >Confirm</Button> {' '}
+                      </Form>
+                    </ModalBody>
+                  </Modal>
+
+                  <Modal size='lg' isOpen={this.state.isRestartModalOpen} toggle={this.toggleRestartModal}>
+                    <ModalHeader toggle={this.toggleRestartModal}>Please Enter Your Full Name</ModalHeader>
+                    <ModalBody>
+                      Your simulation has been restarted. All the changes that haven't been committed yet are clearned. 
+                    </ModalBody>
+                    <ModalFooter>
+                      <Button size='lg' className='display-button' color="info" onClick={this.toggleRestartModal}>Got It</Button>
                     </ModalFooter>
                   </Modal>
                   
@@ -1002,7 +1237,7 @@ class Financing extends Component {
                     Monthly Income Table
                 </h4> 
                 <div id = "display_portion" onScroll={e => this.track_action(e, "scroll")}  tabIndex="1">
-                    <HotTable className="handsontable" id ="display_table" data={monthly_income_display} ref={this.hotTableComponent} id={this.id}
+                    <HotTable className="handsontable" id ="display_table" data={monthly_income_display} ref={this.hotTableComponent1} id={this.id}
                         colHeaders={true} 
                         rowHeaders={true} 
                         width="100%" 
@@ -1021,7 +1256,7 @@ class Financing extends Component {
                     Transaction Log
                 </h4> 
                 <div id = "display_portion" onScroll={e => this.track_action(e, "scroll")}  tabIndex="1">
-                    <HotTable className="handsontable" id ="display_table" data={check_book_display} ref={this.hotTableComponent} id={this.id}
+                    <HotTable className="handsontable" id ="display_table" data={check_book_display} ref={this.hotTableComponent2} id={this.id}
                         colHeaders={true} 
                         rowHeaders={true} 
                         width="100%" 
