@@ -5,11 +5,17 @@ var mysql = require('mysql');
 // Function that gets connection to SQL database
 function getConnection() {
     return mysql.createConnection({
-      host: 'localhost',
-      user: 'root',
-      password: 'password', 
-      database: 'financing_simulation',
-      port: 3307,
+      // host: 'localhost',
+      // user: 'root',
+      // password: 'password', 
+      // database: 'financing_simulation',
+      // port: 3307,
+      // multipleStatements: true
+      
+      host: "us-cdbr-east-02.cleardb.com",
+      user: "be99851caba131",
+      password: "941059a0",
+      database: "heroku_0e7e9ca9cbde5f9",
       multipleStatements: true
     })
 }

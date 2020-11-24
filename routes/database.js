@@ -2,14 +2,20 @@ var express = require('express');
 var router = express.Router();
 var mysql = require('mysql');
 
-// Function that gets connection to SQL database
+// Function that gets connection to SQL database // mysql://be99851caba131:941059a0@us-cdbr-east-02.cleardb.com/heroku_0e7e9ca9cbde5f9?reconnect=true
 function getConnection() {
     return mysql.createConnection({
-      host: 'localhost',
-      user: 'root',
-      password: 'password', 
-      database: 'spreadsheetweb',
-      port: 3307,
+      // host: 'localhost',
+      // user: 'root',
+      // password: 'password', 
+      // database: 'spreadsheetweb',
+      // port: 3307,
+      // multipleStatements: true
+      
+      host: "us-cdbr-east-02.cleardb.com",
+      user: "be99851caba131",
+      password: "941059a0",
+      database: "heroku_0e7e9ca9cbde5f9",
       multipleStatements: true
     })
 }
