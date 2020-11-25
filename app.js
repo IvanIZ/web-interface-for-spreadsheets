@@ -17,11 +17,7 @@ var Lock_Manager = require('./Lock_Manager');
 let lock_manager = new Lock_Manager();
 
 var app = express();
-app.use(express.static(path.join(__dirname, '/web_spreadsheet/build')))
-
-app.get('*', function(req, res) {
-  res.sendFile(path.join(__dirname, 'web_spreadsheet/build', 'web_spreadsheet/App.js'));
-});
+app.use(express.static(path.join(__dirname, 'web_spreadsheet/build')))
 
 let current_users = []
 let user_dict = {}
@@ -45,6 +41,10 @@ app.use('/academic', academicRouter);
 app.use('/management', managementRouter);
 app.use('/financing', financingRouter);
 app.use('/training', trainingRouter);
+
+// app.get('*', function(req, res) {
+//   res.sendFile(path.join(__dirname + '/web_spreadsheet/build/index.html'));
+// });
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
