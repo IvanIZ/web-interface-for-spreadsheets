@@ -19,6 +19,10 @@ let lock_manager = new Lock_Manager();
 var app = express();
 app.use(express.static(path.join(__dirname, '/web_spreadsheet/build')))
 
+app.get('*', function(req, res) {
+  res.sendFile(path.join(__dirname, 'web_spreadsheet/build', 'web_spreadsheet/App.js'));
+});
+
 let current_users = []
 let user_dict = {}
 let history = []
