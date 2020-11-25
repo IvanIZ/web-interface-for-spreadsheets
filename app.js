@@ -57,9 +57,11 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-const port = process.env.PORT || 3001
+//  || 3001
+// "start": "node ./bin/www"
+const port = process.env.PORT
 server = app.listen(port, () => {
-  console.log("Backend server is up and listening on port 3001...")
+  console.log('Backend server is up and listening on ${PORT} 3001...')
 })
 
 // =================================================Frontend & Backend Communication ================================================
