@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node app.js",
-    "heroku-postbuild": "cd web_spreadsheet && npm install && npm run build"
+    "heroku-postbuild": "cd web_spreadsheet && npm install && npm run build && npm run start"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
