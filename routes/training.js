@@ -51,6 +51,8 @@ router.post('/send-training-data/academic', (req, res) => {
           res.sendStatus(500)
           return
       }
+      res.header('Access-Control-Allow-Origin', "*");
+      res.header('Access-Control-Allow-Headers', "*");
     })
     res.end()
     //return res.json(results)
@@ -81,6 +83,8 @@ router.post('/send-training-data/financing', (req, res) => {
           res.sendStatus(500)
           return
       }
+      res.header('Access-Control-Allow-Origin', "*");
+      res.header('Access-Control-Allow-Headers', "*");
     })
     res.end()
     //return res.json(results)
@@ -111,6 +115,8 @@ router.post('/send-training-data/management', (req, res) => {
           res.sendStatus(500)
           return
       }
+      res.header('Access-Control-Allow-Origin', "*");
+      res.header('Access-Control-Allow-Headers', "*");
     })
     res.end()
     //return res.json(results)
