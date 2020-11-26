@@ -106,6 +106,7 @@ router.get('/student_status/fetch-fifty-rows/:start_id', (req, res) => {
     
     res.header('Access-Control-Allow-Origin', "*");
     res.header('Access-Control-Allow-Headers', "*");
+    
     res.json(rows)
   })
 
