@@ -13,6 +13,7 @@ var financingRouter = require('./routes/financing');
 var trainingRouter = require('./routes/training');
 var socket = require('socket.io');
 var Lock_Manager = require('./Lock_Manager');
+let cors = require('cors')
 
 let lock_manager = new Lock_Manager();
 
@@ -27,6 +28,8 @@ let history = []
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
+
+app.use(cors());
 
 app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({limit: '50mb'}));app.use(logger('dev'));
