@@ -99,7 +99,7 @@ router.post('/send-training-data/management', (req, res) => {
     user_actions = req.body.action_package.user_actions;
     console.log(user_actions)
   
-    var queries = '';
+    var queries = ''; 
   
     user_actions.forEach(function (item) {
       // queries += mysql.format('UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);', item);
