@@ -45,14 +45,16 @@ router.post('/send-training-data/academic', (req, res) => {
   
     //generate sql query
     // y, value, x
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Headers', "*");
     getConnection().query(queries, (err, results, fields) => {
       if (err) {
           console.log("Failed to insert new user: " + err)
           res.sendStatus(500)
           return
       }
-      res.header('Access-Control-Allow-Origin', "*");
-      res.header('Access-Control-Allow-Headers', "*");
+      // res.header('Access-Control-Allow-Origin', "*");
+      // res.header('Access-Control-Allow-Headers', "*");
     })
     res.end()
     //return res.json(results)
@@ -77,14 +79,16 @@ router.post('/send-training-data/financing', (req, res) => {
   
     //generate sql query
     // y, value, x
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Headers', "*");
     getConnection().query(queries, (err, results, fields) => {
       if (err) {
           console.log("Failed to insert new user: " + err)
           res.sendStatus(500)
           return
       }
-      res.header('Access-Control-Allow-Origin', "*");
-      res.header('Access-Control-Allow-Headers', "*");
+      // res.header('Access-Control-Allow-Origin', "*");
+      // res.header('Access-Control-Allow-Headers', "*");
     })
     res.end()
     //return res.json(results)
@@ -109,14 +113,16 @@ router.post('/send-training-data/management', (req, res) => {
   
     //generate sql query
     // y, value, x
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Headers', "*");
     getConnection().query(queries, (err, results, fields) => {
       if (err) {
           console.log("Failed to insert new user: " + err)
           res.sendStatus(500)
           return
       }
-      res.header('Access-Control-Allow-Origin', "*");
-      res.header('Access-Control-Allow-Headers', "*");
+      // res.header('Access-Control-Allow-Origin', "*");
+      // res.header('Access-Control-Allow-Headers', "*");
     })
     res.end()
     //return res.json(results)
