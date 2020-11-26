@@ -74,7 +74,9 @@ router.get('/grade_book/fetch-fifty-rows/:start_id', (req, res) => {
     }
 
     console.log("I think we fetched 50 more rows seccessfully")
-    //console.log(rows)
+    
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Headers', "*");
     res.json(rows)
   })
 
@@ -101,7 +103,9 @@ router.get('/student_status/fetch-fifty-rows/:start_id', (req, res) => {
     }
 
     console.log("I think we fetched 50 more rows seccessfully")
-    //console.log(rows)
+    
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Headers', "*");
     res.json(rows)
   })
 
