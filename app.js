@@ -17,7 +17,8 @@ var Lock_Manager = require('./Lock_Manager');
 let lock_manager = new Lock_Manager();
 
 var app = express();
-app.use(express.static(path.join(__dirname, 'web_spreadsheet/build')))
+// app.use(express.static(path.join(__dirname, 'web_spreadsheet/build')))
+app.use('/static', express.static(path.join(__dirname, 'web_spreadsheet/build')));
 
 let current_users = []
 let user_dict = {}
