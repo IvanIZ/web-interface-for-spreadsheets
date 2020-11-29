@@ -47,17 +47,16 @@ router.post('/send-training-data/academic', (req, res) => {
     // y, value, x
     res.header('Access-Control-Allow-Origin', "*");
     res.header('Access-Control-Allow-Headers', "*");
-    getConnection().query(queries, (err, results, fields) => {
+    var connection = getConnection()
+    connection.query(queries, (err, results, fields) => {
       if (err) {
           console.log("Failed to insert new user: " + err)
           res.sendStatus(500)
           return
       }
-      // res.header('Access-Control-Allow-Origin', "*");
-      // res.header('Access-Control-Allow-Headers', "*");
     })
-    res.end()
-    //return res.json(results)
+    res.end();
+    connection.end();
 })
 
 // Send training data from the frontend to the database

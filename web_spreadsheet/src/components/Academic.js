@@ -1,11 +1,8 @@
 import React, { Component, useState } from 'react';
 import ReactDOM from "react-dom"
 import { HotTable } from '@handsontable/react';
-import Handsontable from 'handsontable';
 import 'handsontable/dist/handsontable.full.css';
-import logo from '../logo.svg';
 import '../App.css';
-import {ExcelRenderer, OutTable} from 'react-excel-renderer';
 import {
   Collapse,
   Navbar,
@@ -28,9 +25,9 @@ import {
   useHistory,
   Redirect
 } from "react-router-dom";
-import Spreadsheet from "react-spreadsheet";
-import { ReactCanvasGrid } from 'react-canvas-grid';
-import InfiniteScroll from "react-infinite-scroll-component";
+// import Spreadsheet from "react-spreadsheet";
+// import { ReactCanvasGrid } from 'react-canvas-grid';
+// import InfiniteScroll from "react-infinite-scroll-component";
 import io from "socket.io-client";
 import classnames from 'classnames';
 
