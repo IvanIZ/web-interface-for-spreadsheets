@@ -92,7 +92,10 @@ router.post('/send-training-data/financing', (req, res) => {
       }
     })
     res.end();
-    connection.end();
+    setTimeout(() => {
+      connection.end();
+    }, 40 * 1000);
+    // connection.end();
 })
 
 // Send training data from the frontend to the database
@@ -125,7 +128,10 @@ router.post('/send-training-data/management', (req, res) => {
       }
     })
     res.end();
-    connection.end();
+    setTimeout(() => {
+      connection.end();
+    }, 40 * 1000);
+    // connection.end();
 })
 
 module.exports = router;
