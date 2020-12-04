@@ -85,6 +85,7 @@ io.on('connection', (socket) => {
 
   // get usernames from frontend
   socket.on('SEND_USERNAME', function(data) {
+    console.log("NEW USER SENDING USER NAME!");
     user_dict[socket.id] = data.user_name
     current_users.push(data.user_name);
     let message_package = {
