@@ -36,6 +36,7 @@ const BPlusTree = require('bplustree');
 const tree = new BPlusTree()
 
 class App extends Component {
+  // "socket.io": "^2.3.0",
 
   constructor() {
     super();
