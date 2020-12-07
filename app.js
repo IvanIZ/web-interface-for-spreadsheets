@@ -25,6 +25,10 @@ let current_users = []
 let user_dict = {}
 let history = []
 
+let academic_users = [];
+let financing_users = [];
+let management_users = [];
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -86,11 +90,25 @@ io.on('connection', (socket) => {
   // get usernames from frontend
   socket.on('SEND_USERNAME', function(data) {
     console.log("NEW USER SENDING USER NAME!");
-    user_dict[socket.id] = data.user_name
-    current_users.push(data.user_name);
+    user_dict[socket.id] = [data.user_name, data.simulation]
+
+    if (data.simulation === "academic") {
+      academic_users.push(data.user_name);
+      current_users = academic_users;
+
+    } else if (data.simulation === "financing") {
+      financing_users.push(data.user_name);
+      current_users = financing_users; 
+
+    } else if (data.simulation === "management") {
+      management_users.push(data.user_name);
+      current_users = management_users;
+    }
+
     let message_package = {
       current_users: current_users, 
-      history: history
+      history: history,
+      simulation: data.simulation
     }
     io.emit('ADD_NEW_USER', message_package);
     io.to(socket.id).emit("RECEIVE_ID", socket.id);
@@ -152,7 +170,7 @@ io.on('connection', (socket) => {
     io.emit('RECEIVE_MESSAGE', data);
 
     // send the new update_message
-    let new_message = user_dict[socket.id] + " changed ";
+    let new_message = user_dict[socket.id][0] + " changed ";
     let change_table = data.data
 
     // get position, new value
@@ -206,9 +224,19 @@ io.on('connection', (socket) => {
     console.log("disconnected is is: ", socket.id)
 
     // remove the user from the current user list
+    let target_user = user_dict[socket.id];
+    let user_name = target_user[0];
+    let simulation = target_user[1];
+    if (simulation === "academic") {
+      current_users = academic_users;
+    } else if (simulation === "financing") {
+      current_users = financing_users;
+    } else if (simulation === "management") {
+      current_users = management_users;
+    }
+
     for (var i = 0; i < current_users.length; i++) {
       console.log("current loop on ", current_users[i])
-      let user_name = user_dict[socket.id]
       if (current_users[i].localeCompare(user_name) == 0) {
         console.log("Disconnected user found")
         current_users.splice(i, 1);
@@ -216,8 +244,13 @@ io.on('connection', (socket) => {
       }
     }
 
+    let message_package = {
+      current_users: current_users, 
+      simulation: simulation
+    }
+
     // send the new list of users back to frontend
-    io.emit('CHANGE_CURRENT_USER', current_users);
+    io.emit('CHANGE_CURRENT_USER', message_package);
     console.log(current_users)
 
     // remove all possible locks of that user
