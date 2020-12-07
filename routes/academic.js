@@ -52,7 +52,7 @@ router.get('/attendance/fetch-fifty-rows/:start_id', (req, res) => {
     })
     setTimeout(() => {
       connection.end();
-    }, 40 * 1000);
+    }, 5 * 1000);
     //res.end()
 });
 
@@ -83,7 +83,7 @@ router.get('/grade_book/fetch-fifty-rows/:start_id', (req, res) => {
   })
   setTimeout(() => {
     connection.end();
-  }, 40 * 1000);
+  }, 5 * 1000);
   //res.end()
 });
 
@@ -115,7 +115,7 @@ router.get('/student_status/fetch-fifty-rows/:start_id', (req, res) => {
   })
   setTimeout(() => {
     connection.end();
-  }, 40 * 1000);
+  }, 5 * 1000);
   //res.end()
 });
 
@@ -147,7 +147,7 @@ router.get('/students/fetch-fifty-rows/:start_id', (req, res) => {
   })
   setTimeout(() => {
     connection.end();
-  }, 40 * 1000);
+  }, 5 * 1000);
   //res.end()
 });
 
@@ -179,7 +179,7 @@ router.get('/team_grades/fetch-fifty-rows/:start_id', (req, res) => {
   })
   setTimeout(() => {
     connection.end();
-  }, 40 * 1000);
+  }, 5 * 1000);
   //res.end()
 });
 

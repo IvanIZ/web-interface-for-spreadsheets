@@ -52,7 +52,7 @@ router.get('/progress_log/fetch-fifty-rows/:start_id', (req, res) => {
     })
     setTimeout(() => {
       connection.end();
-    }, 40 * 1000);
+    }, 5 * 1000);
     //res.end()
 });
 
@@ -83,7 +83,7 @@ router.get('/employee_schedule_v1/fetch-fifty-rows/:start_id', (req, res) => {
     })
     setTimeout(() => {
       connection.end();
-    }, 40 * 1000);
+    }, 5 * 1000);
     //res.end()
 });
 
@@ -114,7 +114,7 @@ router.get('/employee_schedule_v2/fetch-fifty-rows/:start_id', (req, res) => {
     })
     setTimeout(() => {
       connection.end();
-    }, 40 * 1000);
+    }, 5 * 1000);
     //res.end()
 });
 

@@ -52,7 +52,7 @@ router.get('/check_book/fetch-fifty-rows/:start_id', (req, res) => {
     })
     setTimeout(() => {
       connection.end();
-    }, 40 * 1000);
+    }, 5 * 1000);
     //res.end()
 });
 
@@ -83,7 +83,7 @@ router.get('/monthly_expense/fetch-fifty-rows/:start_id', (req, res) => {
   })
   setTimeout(() => {
     connection.end();
-  }, 40 * 1000);
+  }, 5 * 1000);
   //res.end()
 });
 
@@ -114,7 +114,7 @@ router.get('/monthly_income/fetch-fifty-rows/:start_id', (req, res) => {
     })
     setTimeout(() => {
       connection.end();
-    }, 40 * 1000);
+    }, 5 * 1000);
     //res.end()
   });
 
@@ -145,7 +145,7 @@ router.get('/check_book2/fetch-fifty-rows/:start_id', (req, res) => {
   })
   setTimeout(() => {
     connection.end();
-  }, 40 * 1000);
+  }, 5 * 1000);
   //res.end()
 });
 
@@ -176,7 +176,7 @@ router.get('/check_book3/fetch-fifty-rows/:start_id', (req, res) => {
   })
   setTimeout(() => {
     connection.end();
-  }, 40 * 1000);
+  }, 5 * 1000);
   //res.end()
 });
 
