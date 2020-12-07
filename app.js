@@ -225,6 +225,9 @@ io.on('connection', (socket) => {
 
     // remove the user from the current user list
     let target_user = user_dict[socket.id];
+    if (typeof target_user === "undefined") {
+      return;
+    }
     let user_name = target_user[0];
     let simulation = target_user[1];
     if (simulation === "academic") {
