@@ -50,7 +50,9 @@ router.get('/attendance/fetch-fifty-rows/:start_id', (req, res) => {
       res.header('Access-Control-Allow-Headers', "*");
       res.json(rows)
     })
-  
+    setTimeout(() => {
+      connection.end();
+    }, 40 * 1000);
     //res.end()
 });
 
@@ -79,7 +81,9 @@ router.get('/grade_book/fetch-fifty-rows/:start_id', (req, res) => {
     res.header('Access-Control-Allow-Headers', "*");
     res.json(rows)
   })
-
+  setTimeout(() => {
+    connection.end();
+  }, 40 * 1000);
   //res.end()
 });
 
@@ -109,7 +113,9 @@ router.get('/student_status/fetch-fifty-rows/:start_id', (req, res) => {
     
     res.json(rows)
   })
-
+  setTimeout(() => {
+    connection.end();
+  }, 40 * 1000);
   //res.end()
 });
 

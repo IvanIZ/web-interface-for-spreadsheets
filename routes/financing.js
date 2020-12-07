@@ -50,7 +50,9 @@ router.get('/check_book/fetch-fifty-rows/:start_id', (req, res) => {
       res.header('Access-Control-Allow-Headers', "*");
       res.json(rows)
     })
-  
+    setTimeout(() => {
+      connection.end();
+    }, 40 * 1000);
     //res.end()
 });
 
@@ -79,7 +81,9 @@ router.get('/monthly_expense/fetch-fifty-rows/:start_id', (req, res) => {
     res.header('Access-Control-Allow-Headers', "*");
     res.json(rows)
   })
-
+  setTimeout(() => {
+    connection.end();
+  }, 40 * 1000);
   //res.end()
 });
 
@@ -108,7 +112,9 @@ router.get('/monthly_income/fetch-fifty-rows/:start_id', (req, res) => {
       res.header('Access-Control-Allow-Headers', "*");
       res.json(rows)
     })
-  
+    setTimeout(() => {
+      connection.end();
+    }, 40 * 1000);
     //res.end()
   });
 

@@ -43,14 +43,16 @@ router.get('/progress_log/fetch-fifty-rows/:start_id', (req, res) => {
         res.sendStatus(500);
         return;
       }
-  
+      
       console.log("I think we fetched 50 more rows seccessfully")
       
       res.header('Access-Control-Allow-Origin', "*");
       res.header('Access-Control-Allow-Headers', "*");
       res.json(rows)
     })
-  
+    setTimeout(() => {
+      connection.end();
+    }, 40 * 1000);
     //res.end()
 });
 
@@ -79,7 +81,9 @@ router.get('/employee_schedule_v1/fetch-fifty-rows/:start_id', (req, res) => {
       res.header('Access-Control-Allow-Headers', "*");
       res.json(rows)
     })
-  
+    setTimeout(() => {
+      connection.end();
+    }, 40 * 1000);
     //res.end()
 });
 
@@ -108,7 +112,9 @@ router.get('/employee_schedule_v2/fetch-fifty-rows/:start_id', (req, res) => {
       res.header('Access-Control-Allow-Headers', "*");
       res.json(rows)
     })
-  
+    setTimeout(() => {
+      connection.end();
+    }, 40 * 1000);
     //res.end()
 });
 
