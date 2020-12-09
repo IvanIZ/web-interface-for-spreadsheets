@@ -205,7 +205,7 @@ router.post('/update', (req, res) => {
   //   queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', item);
   // });
   for (var i = 0; i < data.length; i++) {
-    queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE ID = " + data[i][3] + "; ";
+    queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE ID = " + (data[i][3] - 1) + "; ";
   }
   console.log("the generated query string to insert is: " + queries)
 
