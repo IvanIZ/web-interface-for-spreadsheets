@@ -175,10 +175,10 @@ io.on('connection', (socket) => {
 
     // get position, new value
     for (var x = 0; x < change_table.length; x++) {
-      let letter = String.fromCharCode(64 + change_table[x][0]);
-      let number = change_table[x][2]
-      let new_value = change_table[x][1]
-      let table = change_table[x][3];
+      let table = change_table[x][0];
+      let letter = String.fromCharCode(64 + change_table[x][1]);
+      let number = change_table[x][3]
+      let new_value = change_table[x][2]
 
       // Check if the new value is a formula and parse it
       if (new_value.charAt(0) == '=') {
