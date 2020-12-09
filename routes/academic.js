@@ -202,7 +202,7 @@ router.post('/update', (req, res) => {
   data.forEach(function (item) {
     // UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);
     // queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', item );
-    queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', [item[0], item[4], item[2], item[3]]);
+    queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', item);
   });
   console.log("the generated query string to insert is: " + queries)
 
