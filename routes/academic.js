@@ -193,6 +193,9 @@ router.post('/update', (req, res) => {
   data = req.body.pending_changes.data
   console.log("---------------------------------------------------------")
   console.log(data)
+  if (data.length == 0) {
+    return;
+  }
 
   var queries = '';
 
