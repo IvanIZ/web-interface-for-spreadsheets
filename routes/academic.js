@@ -183,4 +183,38 @@ router.get('/team_grades/fetch-fifty-rows/:start_id', (req, res) => {
   //res.end()
 });
 
+
+// updates the attendance table under the academic simulation
+router.post('/update', (req, res) => {
+  console.log("Trying to update the tuples")
+  
+  //data matrix and number of attributes in the current table
+  let data = []
+  data = req.body.pending_changes.data
+  console.log("---------------------------------------------------------")
+  console.log(data)
+
+  var queries = '';
+
+  data.forEach(function (item) {
+    // UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);
+    queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', item);
+  });
+  console.log("the generated query string to insert is: " + queries)
+
+  //generate sql query
+  // y, value, x
+  var connection = getConnection();
+  connection.query(queries, (err, results, fields) => {
+    if (err) {
+        console.log("Failed to insert new user: " + err)
+        res.sendStatus(500)
+        return
+    }
+  })
+  res.end()
+  connection.end();
+  //return res.json(results)
+})
+
 module.exports = router;
