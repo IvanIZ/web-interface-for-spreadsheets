@@ -170,7 +170,11 @@ io.on('connection', (socket) => {
     io.emit('RECEIVE_MESSAGE', data);
 
     // send the new update_message
-    let new_message = user_dict[socket.id][0] + " changed ";
+    let target_user = user_dict[socket.id];
+    if (typeof target_user === "undefined") {
+      return;
+    }
+    let new_message = target_user[0] + " changed ";
     let change_table = data.data
 
     // get position, new value
