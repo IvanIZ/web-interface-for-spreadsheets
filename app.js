@@ -183,11 +183,7 @@ io.on('connection', (socket) => {
       let letter = String.fromCharCode(64 + change_table[x][1]);
       let number = change_table[x][3]
       let new_value = change_table[x][2]
-
-      // Check if the new value is a formula and parse it
-      // if (new_value.charAt(0) == '=') {
-      //   new_value = process_formula(new_value);
-      // }
+  
       if (x == change_table.length - 1) {
         new_message += "cell " + letter + number + " in " + table + " table to " + new_value
       } else {

@@ -190,6 +190,7 @@ router.post('/update', (req, res) => {
   console.log("---------------------------------------------------------")
   console.log(data)
   if (data.length == 0) {
+    res.end();
     return;
   }
 
