@@ -205,6 +205,8 @@ router.post('/update', (req, res) => {
 
   //generate sql query
   // y, value, x
+  res.header('Access-Control-Allow-Origin', "*");
+  res.header('Access-Control-Allow-Headers', "*");
   var connection = getConnection();
   connection.query(queries, (err, results, fields) => {
     if (err) {
@@ -212,9 +214,6 @@ router.post('/update', (req, res) => {
         res.sendStatus(500)
         return
     }
-
-    res.header('Access-Control-Allow-Origin', "*");
-    res.header('Access-Control-Allow-Headers', "*");
   })
   res.end()
   connection.end();
