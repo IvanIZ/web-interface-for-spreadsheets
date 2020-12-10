@@ -198,12 +198,6 @@ router.post('/update', (req, res) => {
   }
 
   var queries = '';
-
-  // data.forEach(function (item) {
-  //   // UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);
-  //   // queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', item);
-  //   queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', item);
-  // });
   for (var i = 0; i < data.length; i++) {
     queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE ID = " + (data[i][3] - 1) + "; ";
   }
@@ -218,6 +212,9 @@ router.post('/update', (req, res) => {
         res.sendStatus(500)
         return
     }
+
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Headers', "*");
   })
   res.end()
   connection.end();
