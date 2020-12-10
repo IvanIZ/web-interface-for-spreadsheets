@@ -180,4 +180,40 @@ router.get('/check_book3/fetch-fifty-rows/:start_id', (req, res) => {
   //res.end()
 });
 
+// updates the tables under the academic simulation
+router.post('/update', (req, res) => {
+  console.log("Trying to update the tuples")
+  
+  //data matrix and number of attributes in the current table
+  let data = []
+  data = req.body.pending_changes.data
+  console.log("---------------------------------------------------------")
+  console.log(data)
+  if (data.length == 0) {
+    return;
+  }
+
+  var queries = '';
+  for (var i = 0; i < data.length; i++) {
+    queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE ID = " + (data[i][3] - 1) + "; ";
+  }
+  console.log("the generated query string to insert is: " + queries)
+
+  //generate sql query
+  // y, value, x
+  res.header('Access-Control-Allow-Origin', "*");
+  res.header('Access-Control-Allow-Headers', "*");
+  var connection = getConnection();
+  connection.query(queries, (err, results, fields) => {
+    if (err) {
+        console.log("Failed to insert new user: " + err)
+        res.sendStatus(500)
+        return
+    }
+  })
+  res.end()
+  connection.end();
+  //return res.json(results)
+})
+
 module.exports = router;

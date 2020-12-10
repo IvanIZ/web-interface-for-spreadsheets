@@ -184,7 +184,7 @@ router.get('/team_grades/fetch-fifty-rows/:start_id', (req, res) => {
 });
 
 
-// updates the attendance table under the academic simulation
+// updates the tables under the academic simulation
 router.post('/update', (req, res) => {
   console.log("Trying to update the tuples")
   
