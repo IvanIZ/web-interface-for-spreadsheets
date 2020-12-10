@@ -201,7 +201,7 @@ router.post('/update', (req, res) => {
 
   // data.forEach(function (item) {
   //   // UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);
-  //   // queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', item );
+  //   // queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', item);
   //   queries += mysql.format('UPDATE ? SET ? = ? WHERE (id = ?);', item);
   // });
   for (var i = 0; i < data.length; i++) {
