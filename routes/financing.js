@@ -180,6 +180,37 @@ router.get('/check_book3/fetch-fifty-rows/:start_id', (req, res) => {
   //res.end()
 });
 
+// load content from the check_book3 table for check book simulation
+router.get('/allowance/fetch-fifty-rows/:start_id', (req, res) => {
+  console.log("trying to fetch rows based on entered index and attribute")
+
+  const connection = getConnection();
+
+  const start_id = req.params.start_id;
+  const end_id = Number(start_id) + 200;
+
+  //exclude the start, include the end
+  let queryString = "SELECT * FROM allowance WHERE id >= " + start_id + " AND id < " + end_id
+  console.log("the query string to fetch 50 rows is: "  + queryString)
+  connection.query(queryString, (err, rows, fields) => {
+    if (err) {
+      console.log("Failed to fetch 50 more rows: " + err);
+      res.sendStatus(500);
+      return;
+    }
+
+    console.log("I think we fetched 50 more rows seccessfully")
+    
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Headers', "*");
+    res.json(rows)
+  })
+  setTimeout(() => {
+    connection.end();
+  }, 5 * 1000);
+  //res.end()
+});
+
 // updates the tables under the academic simulation
 router.post('/update', (req, res) => {
   console.log("Trying to update the tuples")
