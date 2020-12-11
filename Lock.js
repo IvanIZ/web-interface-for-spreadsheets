@@ -1,11 +1,12 @@
 class Lock {
-    constructor(type, user, row, col) {
+    constructor(type, user, row, col, table) {
         this.type = type;
         this.user = user;
         this.next_lock = null;
         this.prev_lock = null;
         this.row = row;
         this.col = col;
+        this.table = table;
     }
 
     getType = () => {
@@ -38,6 +39,10 @@ class Lock {
 
     getCol = () => {
         return this.col;
+    }
+
+    getTable = () => {
+        return this.table;
     }
 }
 module.exports = Lock

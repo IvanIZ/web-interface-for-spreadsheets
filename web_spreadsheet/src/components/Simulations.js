@@ -191,9 +191,9 @@ class Simulation extends Component {
     //   addNewUser(data);
     // });
 
-    // this.socket.on('RECEIVE_FREED_CELLS', function(free_cells_package) {
-    //   update_freed_cells(free_cells_package);
-    // });
+    this.socket.on('RECEIVE_FREED_CELLS', function(free_cells_package) {
+      update_freed_cells(free_cells_package);
+    });
 
     // this.socket.on('UPDATE_EDIT_MESSAGE', function(message_package) {
     //   update_edit_message(message_package);

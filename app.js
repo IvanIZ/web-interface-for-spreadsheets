@@ -119,10 +119,12 @@ io.on('connection', (socket) => {
   socket.on('REQUEST_SHARED_LOCK', function(shared_lock_request) {
     let row = shared_lock_request.row;
     let col = shared_lock_request.col;
-    let request_result = lock_manager.request_Shared_Lock(row, col, socket.id);
+    let table = shared_lock_request.table;
+    let request_result = lock_manager.request_Shared_Lock(table, row, col, socket.id);
 
     if (request_result) {
       let shared_lock_accept = {
+        table: table,
         row: row, 
         col: col
       }

@@ -1,8 +1,9 @@
 // const { delete, delete } = require('./app');
+const { lock } = require('./app');
 const Lock = require('./Lock');
 class Lock_Manager {
     constructor() {
-        this.locks = {};
+        this.locks = {}; // the key is [table, row, col], the value is [locks]
     }
 
     /**
@@ -13,37 +14,34 @@ class Lock_Manager {
      * @returns The function returns true on successfully places a lock
      * on the cell. Returns false otherwise
      */
-    request_Shared_Lock = (row, col, user) => {
-        let position = row + ", " + col;
-        let result = this.locks[position];
+    request_Shared_Lock = (table, row, col, user) => {
+        let key = table + "," + row + "," + col;
+        let locks_list = this.locks[key];
 
-        // there is no lock on this cell yet.
-        if (typeof result === "undefined") {
-            let new_lock = new Lock("shared", user, row, col);
-            this.locks[position] = new_lock;
+        // there is no lock on this cell yet or there has been locks but is removed
+        if (typeof locks_list === "undefined" || locks_list.length === 0) {
+            let new_lock = new Lock("shared", user, row, col, table);
+            this.locks[key] = [new_lock];
+            console.log("the key in creating lock is: ", key);
+            console.log("the length of the new lock is: ", this.locks[key].length);
             return true;
         }
 
         // check if the lock exist already, in which returns false
-        let curr_lock = result
-        while (curr_lock !== null) {
-
-            // if found an existing lock with the same user
-            if (curr_lock.getUser() === user) {
+        for (var i = 0; i < locks_list.length; i++) {
+            let lock = locks_list[i];
+            if (lock.getUser() === user) {
                 return true;
             }
-
-            curr_lock = curr_lock.getNext();
         }
 
         // there is a lock but is shared. Insert the new shared lock
-        if (result.getType() === "shared") {
-            let new_lock = new Lock("shared", user, row, col);
+        if (locks_list[0].getType() === "shared") {
+            let new_lock = new Lock("shared", user, row, col, table);
 
-            // insert the new lock to the head of the linked list
-            result.prev(new_lock);
-            new_lock.next(result);
-            this.locks[position] = new_lock;
+            // append the new lock to the list
+            locks_list.push(new_lock);
+            this.locks[key] = locks_list;
             return true;
         }
 
@@ -161,48 +159,36 @@ class Lock_Manager {
 
         // loop through all positions that have lock
         for (var key in this.locks) {
-            let head_lock = this.locks[key];
+            console.log("the key is finish transaction is: ", key)
+            let lock_list = this.locks[key];
+
+            if (lock_list.length === 0) {
+                continue;
+            }
 
             // if found an exclusive lock, remove it
-            if (head_lock.getType() === "exclusive" && head_lock.getUser() == user) {
-                let location = [head_lock.getRow(), head_lock.getCol()];
-                free_cells.push(location);
-                delete this.locks[key];
+            if (lock_list[0].getType() === "exclusive" && head_lock.getUser() == user) {
+                free_cells.push([lock_list[0].getTable(), lock_list[0].getRow(), lock_list[0].getCol()]);   // [table, row, col]
+                this.locks[key] = [];
             }
 
             // if found a shared lock
-            else if (head_lock.getType() === "shared") {
-                let lock = head_lock;
-                while (lock !== null) {
+            else if (lock_list[0].getType() === "shared") {
+                
+                // loop through all the locks at the location
+                for (var i = 0; i < lock_list.length; i++) {
+                    let lock = lock_list[i];
                     if (lock.getUser() === user) {
 
-                        // remove the lock from the list
-                        let prev_lock = lock.getPrev();
-                        let next_lock = lock.getNext();
-                        if (prev_lock !== null) {
-                            prev_lock.next(next_lock);
-                        }
-                        if (next_lock !== null) {
-                            next_lock.prev(prev_lock);
+                        // this cell only has one lock, which is held by current user
+                        if (lock_list.length === 1) {
+                            free_cells.push([lock_list[0].getTable(), lock_list[0].getRow(), lock_list[0].getCol()]);   // [table, row, col]
+                            this.locks[key] = [];
+                            console.log("removing the only shared lock")
+                        } else {
+                            lock_list.splice(i, 1);
                         }
                         break;
-                    }
-                    lock = lock.getNext();
-                }
-
-                // if the target lock is the head lock
-                if (lock == head_lock) {
-
-                    // If the target lock is the only lock in the cell
-                    if (lock.getNext() === null) {
-                        let location = [lock.getRow(), lock.getCol()];
-                        free_cells.push(location);
-                        delete this.locks[key];
-                    }
-
-                    // if there are still other shared locks at the cell, move head
-                    else {
-                        this.locks[key] = lock.getNext();
                     }
                 }
             }
