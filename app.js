@@ -258,13 +258,13 @@ io.on('connection', (socket) => {
     io.emit('CHANGE_CURRENT_USER', message_package);
     console.log(current_users)
 
-    // remove all possible locks of that user
-    let free_cells = lock_manager.finish_transaction(socket.id);
-    let free_cell_package = {
-      free_cells: free_cells,
-      disconnect: true
-    }
-    io.emit("RECEIVE_FREED_CELLS", free_cell_package);
+    // remove all possible locks of that user | Removed for the first user study
+    // let free_cells = lock_manager.finish_transaction(socket.id);
+    // let free_cell_package = {
+    //   free_cells: free_cells,
+    //   disconnect: true
+    // }
+    // io.emit("RECEIVE_FREED_CELLS", free_cell_package);
   });
   
 });
