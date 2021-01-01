@@ -79,10 +79,6 @@ server = app.listen(port, () => {
 
 // =================================================Frontend & Backend Communication ================================================
 
-function process_formula() {
-  console.log("processing formula");
-}
-
 io = socket(server);
 
 io.on('connection', (socket) => {
@@ -218,6 +214,11 @@ io.on('connection', (socket) => {
       disconnect: false
     }
     io.emit("RECEIVE_FREED_CELLS", free_cell_package);
+  });
+
+  // receive layout changes from a client. Send it to all client
+  socket.on('LAYOUT_CHANGES_TO_SOCKET', function(layout_changes) {
+    io.emit('LAYOUT_CHANGES_TO_CLIENT', layout_changes);
   });
 
 
