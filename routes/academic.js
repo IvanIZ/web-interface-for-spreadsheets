@@ -249,7 +249,6 @@ router.post('/update', (req, res) => {
     } else if (data[i][0] === "team_comments") {
       queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = " + data[i][3] + "; ";
     }
-    queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE ID = " + (data[i][3] - 1) + "; ";
   }
   console.log("the generated query string to insert is: " + queries)
 
