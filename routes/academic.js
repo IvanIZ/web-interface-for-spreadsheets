@@ -235,20 +235,46 @@ router.post('/update', (req, res) => {
     return;
   }
 
-  var queries = ''; // [table_name, change_type, value, search_attribute, update_attribute]
+  var queries = '';
   for (var i = 0; i < data.length; i++) {
-
-    if (data[i][0] === "attendance") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
-    } else if (data[i][0] === "cs225_gradebook") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
-    } else if (data[i][0] === "students") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
-    } else if (data[i][0] === "team_grades") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][3] + "'; ";
-    } else if (data[i][0] === "team_comments") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][3] + "'; ";
+    if (data[i][1] === "cell_change") { // [table_name, change_type, value, search_attribute, update_attribute]
+      if (data[i][0] === "attendance") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
+      } else if (data[i][0] === "cs225_gradebook") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
+      } else if (data[i][0] === "students") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
+      } else if (data[i][0] === "team_grades") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][3] + "'; ";
+      } else if (data[i][0] === "team_comments") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][3] + "'; ";
+      }
     }
+
+    else if (data[i][1] === "layout_change") {  // [table_name, change_type, operation, direction, search_attribute]
+      if (data[i][0] === "attendance") {
+        if (data[i][2] === "remove_r") {
+          queries += "DELETE FROM " + data[i][0] +  "' WHERE NetID = '" + data[i][4] + "'; ";
+        }
+      } else if (data[i][0] === "cs225_gradebook") {
+        if (data[i][2] === "remove_r") {
+          queries += "DELETE FROM " + data[i][0] +  "' WHERE NetID = '" + data[i][4] + "'; ";
+        }
+      } else if (data[i][0] === "students") {
+        if (data[i][2] === "remove_r") {
+          queries += "DELETE FROM " + data[i][0] +  "' WHERE NetID = '" + data[i][4] + "'; ";
+        }
+      } else if (data[i][0] === "team_grades") {
+        if (data[i][2] === "remove_r") {
+          queries += "DELETE FROM " + data[i][0] +  "' WHERE Team = '" + data[i][4] + "'; ";
+        }
+      } else if (data[i][0] === "team_comments") {
+        if (data[i][2] === "remove_r") {
+          queries += "DELETE FROM " + data[i][0] +  "' WHERE Team = '" + data[i][4] + "'; ";
+        }
+      }
+    }
+    
   }
   console.log("the generated query string to insert is: " + queries)
 
