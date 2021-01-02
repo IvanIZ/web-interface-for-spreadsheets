@@ -239,15 +239,15 @@ router.post('/update', (req, res) => {
   for (var i = 0; i < data.length; i++) {
 
     if (data[i][0] === "attendance") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = " + data[i][3] + "; ";
+      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
     } else if (data[i][0] === "cs225_gradebook") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = " + data[i][3] + "; ";
+      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
     } else if (data[i][0] === "students") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = " + data[i][3] + "; ";
+      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
     } else if (data[i][0] === "team_grades") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = " + data[i][3] + "; ";
+      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][3] + "'; ";
     } else if (data[i][0] === "team_comments") {
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = " + data[i][3] + "; ";
+      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][3] + "'; ";
     }
   }
   console.log("the generated query string to insert is: " + queries)
