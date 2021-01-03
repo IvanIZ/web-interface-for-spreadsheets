@@ -35,7 +35,7 @@ router.get('/attendance/fetch-fifty-rows/:start_id', (req, res) => {
     const end_id = Number(start_id) + 200;
   
     //exclude the start, include the end
-    let queryString = "SELECT * FROM attendance WHERE id >= " + start_id + " AND id < " + end_id
+    let queryString = "SELECT * FROM attendance"
     console.log("the query string to fetch 50 rows is: "  + queryString)
     connection.query(queryString, (err, rows, fields) => {
       if (err) {
@@ -67,7 +67,7 @@ router.get('/grade_book/fetch-fifty-rows/:start_id', (req, res) => {
   const end_id = Number(start_id) + 200;
 
   //exclude the start, include the end
-  let queryString = "SELECT * FROM cs225_gradebook WHERE id >= " + start_id + " AND id < " + end_id
+  let queryString = "SELECT * FROM cs225_gradebook"
   console.log("the query string to fetch 50 rows is: "  + queryString)
   connection.query(queryString, (err, rows, fields) => {
     if (err) {
@@ -99,7 +99,7 @@ router.get('/student_status/fetch-fifty-rows/:start_id', (req, res) => {
   const end_id = Number(start_id) + 200;
 
   //exclude the start, include the end
-  let queryString = "SELECT * FROM student_status WHERE id >= " + start_id + " AND id < " + end_id
+  let queryString = "SELECT * FROM student_status"
   console.log("the query string to fetch 50 rows is: "  + queryString)
   connection.query(queryString, (err, rows, fields) => {
     if (err) {
@@ -132,7 +132,7 @@ router.get('/students/fetch-fifty-rows/:start_id', (req, res) => {
   const end_id = Number(start_id) + 200;
 
   //exclude the start, include the end
-  let queryString = "SELECT * FROM students WHERE id >= " + start_id + " AND id < " + end_id
+  let queryString = "SELECT * FROM students"
   console.log("the query string to fetch 50 rows is: "  + queryString)
   connection.query(queryString, (err, rows, fields) => {
     if (err) {
@@ -165,7 +165,7 @@ router.get('/team_grades/fetch-fifty-rows/:start_id', (req, res) => {
   const end_id = Number(start_id) + 200;
 
   //exclude the start, include the end
-  let queryString = "SELECT * FROM team_grades WHERE id >= " + start_id + " AND id < " + end_id
+  let queryString = "SELECT * FROM team_grades"
   console.log("the query string to fetch 50 rows is: "  + queryString)
   connection.query(queryString, (err, rows, fields) => {
     if (err) {
@@ -198,7 +198,7 @@ router.get('/team_comments/fetch-fifty-rows/:start_id', (req, res) => {
   const end_id = Number(start_id) + 28;
 
   //exclude the start, include the end
-  let queryString = "SELECT * FROM team_comments WHERE id >= " + start_id + " AND id < " + end_id
+  let queryString = "SELECT * FROM team_comments"
   console.log("the query string to fetch 50 rows is: "  + queryString)
   connection.query(queryString, (err, rows, fields) => {
     if (err) {
@@ -237,7 +237,7 @@ router.post('/update', (req, res) => {
 
   var queries = '';
   for (var i = 0; i < data.length; i++) {
-    if (data[i][1] === "cell_change") { // [table_name, change_type, update_value, update_attribute, search_attribute1, search_attribute2]
+    if (data[i][1] === "cell_change") { // [table_name, change_type, update_value, update_attribute, search_attribute1, search_attribute2, x_coord, y_coord] for cell changes
       if (data[i][0] === "attendance") {
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
       } else if (data[i][0] === "cs225_gradebook") {
