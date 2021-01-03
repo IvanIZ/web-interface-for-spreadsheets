@@ -237,18 +237,8 @@ router.post('/update', (req, res) => {
 
   var queries = '';
   for (var i = 0; i < data.length; i++) {
-    if (data[i][1] === "cell_change") { // [table_name, change_type, value, search_attribute, update_attribute]
-      if (data[i][0] === "attendance") {
-        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
-      } else if (data[i][0] === "cs225_gradebook") {
-        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
-      } else if (data[i][0] === "students") {
-        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][3] + "'; ";
-      } else if (data[i][0] === "team_grades") {
-        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][3] + "'; ";
-      } else if (data[i][0] === "team_comments") {
-        queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][3] + "'; ";
-      }
+    if (data[i][1] === "cell_change") { // [table_name, change_type, value, search_value, update_attribute, search_key] for cell changes
+      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE " + data[i][5] +  " = '" + data[i][3] + "'; ";
     }
 
     else if (data[i][1] === "layout_change") {
