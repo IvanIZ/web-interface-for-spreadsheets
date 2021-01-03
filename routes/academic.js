@@ -251,26 +251,46 @@ router.post('/update', (req, res) => {
       }
     }
 
-    else if (data[i][1] === "layout_change") {  // [table_name, change_type, operation, direction, search_attribute ]
-      if (data[i][0] === "attendance") {
+    else if (data[i][1] === "layout_change") {
+      if (data[i][0] === "attendance") {    // [table_name, change_type, operation, direction, search_attribute ]
         if (data[i][2] === "remove_r") {
           queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][4] + "'; ";
+        }
+
+        if (data[i][2] === "insert_r") {  // [table_name, change_type, operation, value, search_attribute] for insert
+          queries += "INSERT INTO " + data[i][0] +  " (" + data[i][4] + ") VALUES ('" + data[i][3] + "');";
         }
       } else if (data[i][0] === "cs225_gradebook") {
         if (data[i][2] === "remove_r") {
           queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][4] + "'; ";
         }
+
+        if (data[i][2] === "insert_r") {  // [table_name, change_type, operation, value, search_attribute] for insert
+          queries += "INSERT INTO " + data[i][0] +  " (" + data[i][4] + ") VALUES ('" + data[i][3] + "');";
+        }
       } else if (data[i][0] === "students") {
         if (data[i][2] === "remove_r") {
           queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][4] + "'; ";
+        }
+
+        if (data[i][2] === "insert_r") {  // [table_name, change_type, operation, value, search_attribute] for insert
+          queries += "INSERT INTO " + data[i][0] +  " (" + data[i][4] + ") VALUES ('" + data[i][3] + "');";
         }
       } else if (data[i][0] === "team_grades") {
         if (data[i][2] === "remove_r") {
           queries += "DELETE FROM " + data[i][0] +  " WHERE Team = '" + data[i][4] + "'; ";
         }
+
+        if (data[i][2] === "insert_r") {  // [table_name, change_type, operation, value, search_attribute] for insert
+          queries += "INSERT INTO " + data[i][0] +  " (" + data[i][4] + ") VALUES ('" + data[i][3] + "');";
+        }
       } else if (data[i][0] === "team_comments") {
         if (data[i][2] === "remove_r") {
           queries += "DELETE FROM " + data[i][0] +  " WHERE Team = '" + data[i][4] + "'; ";
+        }
+
+        if (data[i][2] === "insert_r") {  // [table_name, change_type, operation, value, search_attribute] for insert
+          queries += "INSERT INTO " + data[i][0] +  " (" + data[i][4] + ") VALUES ('" + data[i][3] + "');";
         }
       }
     }
