@@ -237,8 +237,18 @@ router.post('/update', (req, res) => {
 
   var queries = '';
   for (var i = 0; i < data.length; i++) {
-    if (data[i][1] === "cell_change") { // [table_name, change_type, value, search_value, update_attribute, search_key] for cell changes
-      queries += "UPDATE " + data[i][0] + " SET " + data[i][4] + " = '" + data[i][2] + "' WHERE " + data[i][5] +  " = '" + data[i][3] + "'; ";
+    if (data[i][1] === "cell_change") { // [table_name, change_type, update_value, update_attribute, search_attribute1, search_attribute2]
+      if (data[i][0] === "attendance") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
+      } else if (data[i][0] === "cs225_gradebook") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
+      } else if (data[i][0] === "students") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
+      } else if (data[i][0] === "team_grades") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][4] + "';";
+      } else if (data[i][0] === "team_comments") {
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][4] + "';";
+      }
     }
 
     else if (data[i][1] === "layout_change") {
