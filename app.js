@@ -181,6 +181,7 @@ io.on('connection', (socket) => {
       // [table_name, change_type, update_value, update_attribute, search_attribute1, search_attribute2, y_coord, x_coord] for cell changes
       // [table_name, change_type, operation, direction, search_attribute, socket_id] for remove row
       // [table_name, change_type, operation, value, search_attribute, socket_id] for insert row
+      console.log("the current change is: ", change_table[x])
       let table = change_table[x][0];
       let change_type = change_table[x][1];
 
