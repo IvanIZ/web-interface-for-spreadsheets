@@ -160,7 +160,8 @@ io.on('connection', (socket) => {
   })
 
 
-  // listen for cell data change
+  // listen for cell data change 
+  // NOTE: currently this function does not differentiate users from different simulations !!!!!!!!!!!
   socket.on('SEND_MESSAGE', function(data) {
 
     // reflect data changes to other users
@@ -172,20 +173,45 @@ io.on('connection', (socket) => {
     if (typeof target_user === "undefined") {
       return;
     }
-    let new_message = target_user[0] + " changed ";
+    let new_message = target_user[0];
     let change_table = data.data
 
     // get position, new value
     for (var x = 0; x < change_table.length; x++) {
+      // [table_name, change_type, update_value, update_attribute, search_attribute1, search_attribute2, y_coord, x_coord] for cell changes
+      // [table_name, change_type, operation, direction, search_attribute, socket_id] for remove row
+      // [table_name, change_type, operation, value, search_attribute, socket_id] for insert row
       let table = change_table[x][0];
-      let letter = String.fromCharCode(64 + change_table[x][1]);
-      let number = change_table[x][3]
-      let new_value = change_table[x][2]
-  
-      if (x == change_table.length - 1) {
-        new_message += "cell " + letter + number + " in " + table + " table to " + new_value
-      } else {
-        new_message += "cell " + letter + number + " in " + table + " table to " + new_value + ", "
+      let change_type = change_table[x][1];
+
+      if (change_type === "layout_change") {
+        let operation = change_table[x][2];
+        if (operation === "remove_r") {
+          if (table === "attendance") {
+            new_message += " removed the entry for student with netID " + change_table[x][4] + " in table " + table + "; ";
+          } else if (table === "cs225_gradebook") {
+            new_message += " removed the entry for student with netID " + change_table[x][4] + " in table " + table + "; ";
+          } else if (table === "students") {
+            new_message += " removed the entry for student with netID " + change_table[x][4] + " in table " + table + "; ";
+          } else if (table === "team_grades") {
+            new_message += " removed the entry for team: " + change_table[x][4] + " in table " + table + "; ";
+          } else if (table === "team_comments") {
+            new_message += " removed the entry for team: " + change_table[x][4] + " in table " + table + "; ";
+          }
+
+        } else if (operation === "insert_r") {
+          new_message += " added a new entry in table " + table + "; ";
+        }
+
+      } else if (change_type === "cell_change") {
+        let letter = String.fromCharCode(64 + change_table[x][7]);
+        let number = change_table[x][6] + 1;
+        let new_value = change_table[x][2];
+        if (x == change_table.length - 1) {
+          new_message += " updated cell " + letter + number + " in " + table + " table to " + new_value
+        } else {
+          new_message += " updated cell " + letter + number + " in " + table + " table to " + new_value + ", "
+        }
       }
     }
 
