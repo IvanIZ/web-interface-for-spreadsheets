@@ -204,7 +204,7 @@ io.on('connection', (socket) => {
         }
 
       } else if (change_type === "cell_change") {
-        let letter = String.fromCharCode(64 + change_table[x][7]);
+        let letter = String.fromCharCode(64 + change_table[x][7] + 1);
         let number = change_table[x][6] + 1;
         let new_value = change_table[x][2];
         if (x == change_table.length - 1) {
