@@ -252,7 +252,7 @@ router.post('/update', (req, res) => {
     }
 
     else if (data[i][1] === "layout_change") {
-      if (data[i][0] === "attendance") {    // [table_name, change_type, operation, direction, search_attribute ]
+      if (data[i][0] === "attendance") {    // [table_name, change_type, operation, direction, search_attribute]
         if (data[i][2] === "remove_r") {
           queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][4] + "'; ";
         }
@@ -261,7 +261,7 @@ router.post('/update', (req, res) => {
           queries += "INSERT INTO " + data[i][0] +  " (" + data[i][4] + ") VALUES ('" + data[i][3] + "');";
         }
       } else if (data[i][0] === "cs225_gradebook") {
-        if (data[i][2] === "remove_r") {
+        if (data[i][2] === "remove_r") { // [table_name, change_type, operation, direction, search_attribute, socket_id] for remove row
           queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][4] + "'; ";
         }
 
