@@ -257,6 +257,20 @@ router.post('/update', (req, res) => {
       }
     }
 
+    else if (data[i][1] === "special_remove") { // [table_name, change_type, update_value, update_attribute, search_attribute1, search_attribute2, x_coord, y_coord, prev_value] for special remove
+      if (data[i][0] === "attendance") { 
+        queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][8] + "' OR NAME = '" + data[i][8] + "';";
+      } else if (data[i][0] === "cs225_gradebook") {
+        queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][8] + "' OR NAME = '" + data[i][8] + "';";
+      } else if (data[i][0] === "students") {
+        queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][8] + "' OR NAME = '" + data[i][8] + "' OR email = '" + data[i][8] + "';";
+      } else if (data[i][0] === "team_grades") {
+        queries += "DELETE FROM " + data[i][0] +  " WHERE Team = '" + data[i][8] + "'; ";
+      } else if (data[i][0] === "team_comments") {
+        queries += "DELETE FROM " + data[i][0] +  " WHERE Team = '" + data[i][8] + "'; ";
+      }
+    }
+
     else if (data[i][1] === "layout_change") {
       if (data[i][0] === "attendance") {    // [table_name, change_type, operation, direction, search_attribute]
         if (data[i][2] === "remove_r") {
