@@ -245,8 +245,14 @@ router.post('/update', (req, res) => {
       } else if (data[i][0] === "students") {
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
       } else if (data[i][0] === "team_grades") {
+        if (data[i][3] === "Peer Reviews") {
+          data[i][3] = "Peer_Reviews";
+        }
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][4] + "';";
       } else if (data[i][0] === "team_comments") {
+        if (data[i][3] === "Peer Reviews") {
+          data[i][3] = "Peer_Reviews";
+        }
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][4] + "';";
       }
     }
