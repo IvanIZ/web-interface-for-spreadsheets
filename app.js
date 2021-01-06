@@ -204,7 +204,7 @@ io.on('connection', (socket) => {
           new_message += " added a new entry in table " + table + "; ";
         }
 
-      } else if (change_type === "cell_change") {
+      } else if (change_type === "cell_change" || change_type === "special_remove") {
         let letter = String.fromCharCode(64 + change_table[x][7] + 1);
         let number = change_table[x][6] + 1;
         let new_value = change_table[x][2];
