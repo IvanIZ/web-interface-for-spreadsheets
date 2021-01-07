@@ -241,13 +241,40 @@ router.post('/update', (req, res) => {
       if (data[i][0] === "attendance") {
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
       } else if (data[i][0] === "cs225_gradebook") {
+
+        // convert attribute with weights to just attribute names
+        if (data[i][3] === "MP (30)") {
+          data[i][3] = "MP";
+        } else if (data[i][3] === "Lab (20)") {
+          data[i][3] = "Lab";
+        } else if (data[i][3] === "Final (20)") {
+          data[i][3] = "Final";
+        } else if (data[i][3] === "Participation (10)") {
+          data[i][3] = "Participation";
+        } else if (data[i][3] === "Project (20)") {
+          data[i][3] = "Project";
+        } else if (data[i][3] === "Overall (100)") {
+          data[i][3] = "Overall";
+        }
+
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
       } else if (data[i][0] === "students") {
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
       } else if (data[i][0] === "team_grades") {
-        if (data[i][3] === "Peer Reviews") {
+
+        // convert attribute with weights to just attribute names
+        if (data[i][3] === "Presentation (20)") {
+          data[i][3] = "Presentation";
+        } else if (data[i][3] === "Codes (40)") {
+          data[i][3] = "Codes";
+        } else if (data[i][3] === "Report (20)") {
+          data[i][3] = "Report";
+        } else if (data[i][3] === "Peer Reviews (20)") {
           data[i][3] = "Peer_Reviews";
+        } else if (data[i][3] === "Overall (100)") {
+          data[i][3] = "Overall";
         }
+        
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][4] + "';";
       } else if (data[i][0] === "team_comments") {
         if (data[i][3] === "Peer Reviews") {
