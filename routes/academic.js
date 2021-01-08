@@ -239,7 +239,7 @@ router.post('/update', (req, res) => {
   for (var i = 0; i < data.length; i++) {
     if (data[i][1] === "cell_change") { // [table_name, change_type, update_value, update_attribute, search_attribute1, search_attribute2, x_coord, y_coord] for cell changes
       if (data[i][0] === "attendance") {
-        queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NAME = '" + data[i][5] + "';";
       } else if (data[i][0] === "cs225_gradebook") {
 
         // convert attribute with weights to just attribute names
@@ -257,7 +257,7 @@ router.post('/update', (req, res) => {
           data[i][3] = "Overall";
         }
 
-        queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
+        queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NAME = '" + data[i][5] + "';";
       } else if (data[i][0] === "students") {
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE NetID = '" + data[i][4] + "' OR NAME = '" + data[i][5] + "';";
       } else if (data[i][0] === "team_grades") {
@@ -274,7 +274,7 @@ router.post('/update', (req, res) => {
         } else if (data[i][3] === "Overall (100)") {
           data[i][3] = "Overall";
         }
-        
+
         queries += "UPDATE " + data[i][0] + " SET " + data[i][3] + " = '" + data[i][2] + "' WHERE Team = '" + data[i][4] + "';";
       } else if (data[i][0] === "team_comments") {
         if (data[i][3] === "Peer Reviews") {
@@ -286,9 +286,9 @@ router.post('/update', (req, res) => {
 
     else if (data[i][1] === "special_remove") { // [table_name, change_type, update_value, update_attribute, search_attribute1, search_attribute2, x_coord, y_coord, prev_value] for special remove
       if (data[i][0] === "attendance") { 
-        queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][8] + "' OR NAME = '" + data[i][8] + "';";
+        queries += "DELETE FROM " + data[i][0] +  " WHERE NAME = '" + data[i][8] + "';";
       } else if (data[i][0] === "cs225_gradebook") {
-        queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][8] + "' OR NAME = '" + data[i][8] + "';";
+        queries += "DELETE FROM " + data[i][0] +  " WHERE NAME = '" + data[i][8] + "';";
       } else if (data[i][0] === "students") {
         queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][8] + "' OR NAME = '" + data[i][8] + "' OR email = '" + data[i][8] + "';";
       } else if (data[i][0] === "team_grades") {
@@ -301,7 +301,7 @@ router.post('/update', (req, res) => {
     else if (data[i][1] === "layout_change") {
       if (data[i][0] === "attendance") {    // [table_name, change_type, operation, direction, search_attribute]
         if (data[i][2] === "remove_r") {
-          queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][4] + "'; ";
+          queries += "DELETE FROM " + data[i][0] +  " WHERE NAME = '" + data[i][4] + "'; ";
         }
 
         if (data[i][2] === "insert_r") {  // [table_name, change_type, operation, value, search_attribute] for insert
@@ -309,7 +309,7 @@ router.post('/update', (req, res) => {
         }
       } else if (data[i][0] === "cs225_gradebook") {
         if (data[i][2] === "remove_r") { // [table_name, change_type, operation, direction, search_attribute, socket_id] for remove row
-          queries += "DELETE FROM " + data[i][0] +  " WHERE NetID = '" + data[i][4] + "'; ";
+          queries += "DELETE FROM " + data[i][0] +  " WHERE NAME = '" + data[i][4] + "'; ";
         }
 
         if (data[i][2] === "insert_r") {  // [table_name, change_type, operation, value, search_attribute] for insert
