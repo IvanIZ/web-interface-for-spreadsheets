@@ -10,6 +10,7 @@
     "start": "node app.js"
   },
   "dependencies": {
+    "convert-excel-to-json": "^1.7.0",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
     "debug": "~2.6.9",

@@ -21,6 +21,12 @@ var app = express();
 // app.use(express.static(path.join(__dirname, 'web_spreadsheet/build')))
 app.use('/static', express.static(path.join(__dirname, 'web_spreadsheet/build')));
 
+const excelToJson = require('convert-excel-to-json');
+const employee_tables = excelToJson({
+  sourceFile: 'employees_schema.xlsx'
+});
+console.log("converted file: ", employee_tables)
+
 let current_users = []
 let user_dict = {}
 let history = []
@@ -28,6 +34,10 @@ let history = []
 let academic_users = [];
 let financing_users = [];
 let management_users = [];
+
+let num_table = 0
+let table_names = ["Empty", "Empty", "Empty", "Empty", "Empty"]
+let curr_tables = [[], [], [], [], []]
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -77,7 +87,7 @@ server = app.listen(port, () => {
   console.log('Backend server is up and listening on ${PORT} 3001...')
 })
 
-// =================================================Frontend & Backend Communication ================================================
+// =================================================Frontend & Backend Communication ================================================ restart
 
 io = socket(server);
 
@@ -110,6 +120,22 @@ io.on('connection', (socket) => {
     io.to(socket.id).emit("RECEIVE_ID", socket.id);
   })
 
+  // send existing tables to frontend
+  socket.on('REQUEST_TABLES', function() {
+    console.log("frontend requesting existing tables! ");
+    io.emit('UPDATE_FRONTEND_TABLE', employee_tables);
+  })
+
+  // receive updates on existing tables from frontend
+  socket.on('UPDATE_BACKEND_TABLES', function(data) {
+    console.log("A user is sending updates to tables!");
+
+    curr_tables = data.curr_tables;
+    table_names = data.table_names;
+    num_table = data.num_table;
+
+    io.emit('UPDATE_FRONTEND_TABLE', data);
+  })
 
   // receive shared lock request from frontend
   socket.on('REQUEST_SHARED_LOCK', function(shared_lock_request) {
