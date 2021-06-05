@@ -39,7 +39,7 @@ router.post('/send-training-data/academic', (req, res) => {
   
     user_actions.forEach(function (item) {
       // queries += mysql.format('UPDATE excel SET attribute' + '?' + ' = ? WHERE (id = ?);', item);
-      queries += mysql.format('INSERT INTO training_academic (name, action, attribute1, attribute2, feature, table_name, schema_id, schema_attr, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', item);
+      queries += mysql.format('INSERT INTO user_logs (name, action_type, att_1, att_2, start_time, end_time, absolute_height, relative_height, table_name, primary_key, tuple_attribute, is_QA, first_row, last_row, time_from_last_QA) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);', item);
     });
     console.log("the generated query string to insert is: " + queries)
   
